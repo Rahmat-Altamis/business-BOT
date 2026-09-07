@@ -1,0 +1,2063 @@
+[
+  {
+    "id": "ai-chat",
+    "category": "ai",
+    "type": "ai_chat",
+    "action": "chat",
+    "command": "ask",
+    "description": "Ask the AI anything",
+    "usage": "/ask",
+    "marquee": true,
+    "options": [
+      {
+        "name": "message",
+        "type": "text",
+        "desc": "Your question",
+        "required": true
+      }
+    ]
+  },
+  {
+    "id": "ai-translate",
+    "category": "ai",
+    "type": "ai_task",
+    "action": "task",
+    "command": "translate",
+    "description": "Translate text (ID↔EN)",
+    "usage": "/ai translate",
+    "group": "ai",
+    "options": [
+      {
+        "name": "text",
+        "type": "text",
+        "desc": "Your input",
+        "required": true
+      }
+    ],
+    "prompt": "Translate the text below. If it is Indonesian, translate it to English; otherwise translate it to Indonesian. Reply with only the translation.\n\n{input}"
+  },
+  {
+    "id": "ai-summarize",
+    "category": "ai",
+    "type": "ai_task",
+    "action": "task",
+    "command": "summarize",
+    "description": "Summarize text",
+    "usage": "/ai summarize",
+    "group": "ai",
+    "options": [
+      {
+        "name": "text",
+        "type": "text",
+        "desc": "Your input",
+        "required": true
+      }
+    ],
+    "prompt": "Summarize the following in 3 short bullet points:\n\n{input}"
+  },
+  {
+    "id": "ai-explain",
+    "category": "ai",
+    "type": "ai_task",
+    "action": "task",
+    "command": "explain",
+    "description": "Explain a concept simply",
+    "usage": "/ai explain",
+    "group": "ai",
+    "options": [
+      {
+        "name": "text",
+        "type": "text",
+        "desc": "Your input",
+        "required": true
+      }
+    ],
+    "prompt": "Explain this clearly and simply in at most 5 sentences:\n\n{input}"
+  },
+  {
+    "id": "ai-essay",
+    "category": "ai",
+    "type": "ai_task",
+    "action": "task",
+    "command": "essay",
+    "description": "Essay help / outline",
+    "usage": "/ai essay",
+    "group": "ai",
+    "options": [
+      {
+        "name": "text",
+        "type": "text",
+        "desc": "Your input",
+        "required": true
+      }
+    ],
+    "prompt": "Help with this essay task. Give a short outline plus key points, not a full essay:\n\n{input}"
+  },
+  {
+    "id": "ai-code",
+    "category": "ai",
+    "type": "ai_task",
+    "action": "task",
+    "command": "code",
+    "description": "Coding help",
+    "usage": "/ai code",
+    "group": "ai",
+    "options": [
+      {
+        "name": "text",
+        "type": "text",
+        "desc": "Your input",
+        "required": true
+      }
+    ],
+    "prompt": "You are a senior software engineer. Answer this coding question with a short code sample:\n\n{input}"
+  },
+  {
+    "id": "ai-grammar",
+    "category": "ai",
+    "type": "ai_task",
+    "action": "task",
+    "command": "grammar",
+    "description": "Fix grammar",
+    "usage": "/ai grammar",
+    "group": "ai",
+    "options": [
+      {
+        "name": "text",
+        "type": "text",
+        "desc": "Your input",
+        "required": true
+      }
+    ],
+    "prompt": "Fix grammar and spelling. Reply with only the corrected text:\n\n{input}"
+  },
+  {
+    "id": "ai-rewrite",
+    "category": "ai",
+    "type": "ai_task",
+    "action": "task",
+    "command": "rewrite",
+    "description": "Rewrite clearer",
+    "usage": "/ai rewrite",
+    "group": "ai",
+    "options": [
+      {
+        "name": "text",
+        "type": "text",
+        "desc": "Your input",
+        "required": true
+      }
+    ],
+    "prompt": "Rewrite this to be clearer and friendlier. Reply with only the rewritten text:\n\n{input}"
+  },
+  {
+    "id": "ai-story",
+    "category": "ai",
+    "type": "ai_task",
+    "action": "task",
+    "command": "story",
+    "description": "Write a short story",
+    "usage": "/write story",
+    "group": "write",
+    "options": [
+      {
+        "name": "text",
+        "type": "text",
+        "desc": "Your input",
+        "required": true
+      }
+    ],
+    "prompt": "Write a very short story (max 150 words) based on:\n\n{input}"
+  },
+  {
+    "id": "ai-poem",
+    "category": "ai",
+    "type": "ai_task",
+    "action": "task",
+    "command": "poem",
+    "description": "Write a poem",
+    "usage": "/write poem",
+    "group": "write",
+    "options": [
+      {
+        "name": "text",
+        "type": "text",
+        "desc": "Your input",
+        "required": true
+      }
+    ],
+    "prompt": "Write a short 4-8 line poem about:\n\n{input}"
+  },
+  {
+    "id": "ai-haiku",
+    "category": "ai",
+    "type": "ai_task",
+    "action": "task",
+    "command": "haiku",
+    "description": "Write a haiku",
+    "usage": "/write haiku",
+    "group": "write",
+    "options": [
+      {
+        "name": "text",
+        "type": "text",
+        "desc": "Your input",
+        "required": true
+      }
+    ],
+    "prompt": "Write exactly one haiku about:\n\n{input}"
+  },
+  {
+    "id": "ai-ideas",
+    "category": "ai",
+    "type": "ai_task",
+    "action": "task",
+    "command": "ideas",
+    "description": "Brainstorm ideas",
+    "usage": "/ai ideas",
+    "group": "ai",
+    "options": [
+      {
+        "name": "text",
+        "type": "text",
+        "desc": "Your input",
+        "required": true
+      }
+    ],
+    "prompt": "Give 7 creative ideas for:\n\n{input}"
+  },
+  {
+    "id": "ai-pros-cons",
+    "category": "ai",
+    "type": "ai_task",
+    "action": "task",
+    "command": "pros-cons",
+    "description": "Pros and cons",
+    "usage": "/ai pros-cons",
+    "group": "ai",
+    "options": [
+      {
+        "name": "text",
+        "type": "text",
+        "desc": "Your input",
+        "required": true
+      }
+    ],
+    "prompt": "List 4 pros and 4 cons for:\n\n{input}"
+  },
+  {
+    "id": "ai-debate",
+    "category": "ai",
+    "type": "ai_task",
+    "action": "task",
+    "command": "debate",
+    "description": "Counter-arguments",
+    "usage": "/ai debate",
+    "group": "ai",
+    "options": [
+      {
+        "name": "text",
+        "type": "text",
+        "desc": "Your input",
+        "required": true
+      }
+    ],
+    "prompt": "Argue AGAINST this position in 4 punchy points:\n\n{input}"
+  },
+  {
+    "id": "ai-workout",
+    "category": "ai",
+    "type": "ai_task",
+    "action": "task",
+    "command": "workout",
+    "description": "Workout plan",
+    "usage": "/ai workout",
+    "group": "ai",
+    "options": [
+      {
+        "name": "text",
+        "type": "text",
+        "desc": "Your input",
+        "required": true
+      }
+    ],
+    "prompt": "Create a short home workout plan for:\n\n{input}"
+  },
+  {
+    "id": "ai-recipe",
+    "category": "ai",
+    "type": "ai_task",
+    "action": "task",
+    "command": "recipe",
+    "description": "Recipe from ingredients",
+    "usage": "/ai recipe",
+    "group": "ai",
+    "options": [
+      {
+        "name": "text",
+        "type": "text",
+        "desc": "Your input",
+        "required": true
+      }
+    ],
+    "prompt": "Suggest a simple recipe using:\n\n{input}"
+  },
+  {
+    "id": "ai-movie",
+    "category": "ai",
+    "type": "ai_task",
+    "action": "task",
+    "command": "movie",
+    "description": "Movie recommendations",
+    "usage": "/ai movie",
+    "group": "ai",
+    "options": [
+      {
+        "name": "text",
+        "type": "text",
+        "desc": "Your input",
+        "required": true
+      }
+    ],
+    "prompt": "Recommend 5 movies for someone who likes:\n\n{input}"
+  },
+  {
+    "id": "ai-song",
+    "category": "ai",
+    "type": "ai_task",
+    "action": "task",
+    "command": "song",
+    "description": "Song recommendations",
+    "usage": "/ai song",
+    "group": "ai",
+    "options": [
+      {
+        "name": "text",
+        "type": "text",
+        "desc": "Your input",
+        "required": true
+      }
+    ],
+    "prompt": "Recommend 5 songs for this mood:\n\n{input}"
+  },
+  {
+    "id": "ai-book",
+    "category": "ai",
+    "type": "ai_task",
+    "action": "task",
+    "command": "book",
+    "description": "Book recommendations",
+    "usage": "/ai book",
+    "group": "ai",
+    "options": [
+      {
+        "name": "text",
+        "type": "text",
+        "desc": "Your input",
+        "required": true
+      }
+    ],
+    "prompt": "Recommend 5 books for someone interested in:\n\n{input}"
+  },
+  {
+    "id": "ai-anime",
+    "category": "ai",
+    "type": "ai_task",
+    "action": "task",
+    "command": "anime",
+    "description": "Anime recommendations",
+    "usage": "/ai anime",
+    "group": "ai",
+    "options": [
+      {
+        "name": "text",
+        "type": "text",
+        "desc": "Your input",
+        "required": true
+      }
+    ],
+    "prompt": "Recommend 5 anime for someone who likes:\n\n{input}"
+  },
+  {
+    "id": "ai-game-rec",
+    "category": "ai",
+    "type": "ai_task",
+    "action": "task",
+    "command": "game-rec",
+    "description": "Game recommendations",
+    "usage": "/ai game-rec",
+    "group": "ai",
+    "options": [
+      {
+        "name": "text",
+        "type": "text",
+        "desc": "Your input",
+        "required": true
+      }
+    ],
+    "prompt": "Recommend 5 games for someone who likes:\n\n{input}"
+  },
+  {
+    "id": "ai-dream",
+    "category": "ai",
+    "type": "ai_task",
+    "action": "task",
+    "command": "dream",
+    "description": "Dream interpretation (fun)",
+    "usage": "/ai dream",
+    "group": "ai",
+    "options": [
+      {
+        "name": "text",
+        "type": "text",
+        "desc": "Your input",
+        "required": true
+      }
+    ],
+    "prompt": "Interpret this dream in a fun short way, and make clear it is just for fun:\n\n{input}"
+  },
+  {
+    "id": "ai-name-ideas",
+    "category": "ai",
+    "type": "ai_task",
+    "action": "task",
+    "command": "name-ideas",
+    "description": "Name ideas",
+    "usage": "/ai name-ideas",
+    "group": "ai",
+    "options": [
+      {
+        "name": "text",
+        "type": "text",
+        "desc": "Your input",
+        "required": true
+      }
+    ],
+    "prompt": "Suggest 10 catchy names for:\n\n{input}"
+  },
+  {
+    "id": "ai-email",
+    "category": "ai",
+    "type": "ai_task",
+    "action": "task",
+    "command": "email",
+    "description": "Draft an email",
+    "usage": "/ai email",
+    "group": "ai",
+    "options": [
+      {
+        "name": "text",
+        "type": "text",
+        "desc": "Your input",
+        "required": true
+      }
+    ],
+    "prompt": "Draft a short, polite email about:\n\n{input}"
+  },
+  {
+    "id": "ai-caption",
+    "category": "ai",
+    "type": "ai_task",
+    "action": "task",
+    "command": "caption",
+    "description": "Social captions",
+    "usage": "/write caption",
+    "group": "write",
+    "options": [
+      {
+        "name": "text",
+        "type": "text",
+        "desc": "Your input",
+        "required": true
+      }
+    ],
+    "prompt": "Write 5 short social media captions for:\n\n{input}"
+  },
+  {
+    "id": "ai-bio",
+    "category": "ai",
+    "type": "ai_task",
+    "action": "task",
+    "command": "bio",
+    "description": "Write a bio",
+    "usage": "/write bio",
+    "group": "write",
+    "options": [
+      {
+        "name": "text",
+        "type": "text",
+        "desc": "Your input",
+        "required": true
+      }
+    ],
+    "prompt": "Write a short cool bio based on:\n\n{input}"
+  },
+  {
+    "id": "ai-slogan",
+    "category": "ai",
+    "type": "ai_task",
+    "action": "task",
+    "command": "slogan",
+    "description": "Slogan ideas",
+    "usage": "/write slogan",
+    "group": "write",
+    "options": [
+      {
+        "name": "text",
+        "type": "text",
+        "desc": "Your input",
+        "required": true
+      }
+    ],
+    "prompt": "Write 7 catchy slogans for:\n\n{input}"
+  },
+  {
+    "id": "ai-product",
+    "category": "ai",
+    "type": "ai_task",
+    "action": "task",
+    "command": "product",
+    "description": "Product description",
+    "usage": "/write product",
+    "group": "write",
+    "options": [
+      {
+        "name": "text",
+        "type": "text",
+        "desc": "Your input",
+        "required": true
+      }
+    ],
+    "prompt": "Write a short punchy product description for:\n\n{input}"
+  },
+  {
+    "id": "ai-speech",
+    "category": "ai",
+    "type": "ai_task",
+    "action": "task",
+    "command": "speech",
+    "description": "Write a speech",
+    "usage": "/write speech",
+    "group": "write",
+    "options": [
+      {
+        "name": "text",
+        "type": "text",
+        "desc": "Your input",
+        "required": true
+      }
+    ],
+    "prompt": "Write a 60-second speech about:\n\n{input}"
+  },
+  {
+    "id": "ai-study-plan",
+    "category": "ai",
+    "type": "ai_task",
+    "action": "task",
+    "command": "study-plan",
+    "description": "Study plan",
+    "usage": "/ai study-plan",
+    "group": "ai",
+    "options": [
+      {
+        "name": "text",
+        "type": "text",
+        "desc": "Your input",
+        "required": true
+      }
+    ],
+    "prompt": "Make a 7-day study plan for:\n\n{input}"
+  },
+  {
+    "id": "ai-interview",
+    "category": "ai",
+    "type": "ai_task",
+    "action": "task",
+    "command": "interview",
+    "description": "Interview prep",
+    "usage": "/ai interview",
+    "group": "ai",
+    "options": [
+      {
+        "name": "text",
+        "type": "text",
+        "desc": "Your input",
+        "required": true
+      }
+    ],
+    "prompt": "Give 6 likely interview questions plus short model answers for:\n\n{input}"
+  },
+  {
+    "id": "ai-resume",
+    "category": "ai",
+    "type": "ai_task",
+    "action": "task",
+    "command": "resume",
+    "description": "Resume tips",
+    "usage": "/ai resume",
+    "group": "ai",
+    "options": [
+      {
+        "name": "text",
+        "type": "text",
+        "desc": "Your input",
+        "required": true
+      }
+    ],
+    "prompt": "Give 5 practical resume tips for:\n\n{input}"
+  },
+  {
+    "id": "ai-pickup",
+    "category": "ai",
+    "type": "ai_task",
+    "action": "task",
+    "command": "pickup",
+    "description": "Pickup line",
+    "usage": "/write pickup",
+    "group": "write",
+    "options": [
+      {
+        "name": "text",
+        "type": "text",
+        "desc": "Your input",
+        "required": true
+      }
+    ],
+    "prompt": "Write one cheesy but cute pickup line about:\n\n{input}"
+  },
+  {
+    "id": "ai-joke-writer",
+    "category": "ai",
+    "type": "ai_task",
+    "action": "task",
+    "command": "joke-writer",
+    "description": "Write a joke",
+    "usage": "/write joke-writer",
+    "group": "write",
+    "options": [
+      {
+        "name": "text",
+        "type": "text",
+        "desc": "Your input",
+        "required": true
+      }
+    ],
+    "prompt": "Write a short original joke about:\n\n{input}"
+  },
+  {
+    "id": "ai-fact-check",
+    "category": "ai",
+    "type": "ai_task",
+    "action": "task",
+    "command": "fact-check",
+    "description": "Quick fact-check",
+    "usage": "/ai fact-check",
+    "group": "ai",
+    "options": [
+      {
+        "name": "text",
+        "type": "text",
+        "desc": "Your input",
+        "required": true
+      }
+    ],
+    "prompt": "Quickly fact-check this claim. Say true / false / uncertain and why, briefly:\n\n{input}"
+  },
+  {
+    "id": "ai-motivate",
+    "category": "ai",
+    "type": "ai_task",
+    "action": "task",
+    "command": "motivate",
+    "description": "Motivation",
+    "usage": "/ai motivate",
+    "group": "ai",
+    "options": [
+      {
+        "name": "text",
+        "type": "text",
+        "desc": "Your input",
+        "required": true
+      }
+    ],
+    "prompt": "Give a short, genuine, non-cheesy motivational message about:\n\n{input}"
+  },
+  {
+    "id": "ai-roast-ai",
+    "category": "ai",
+    "type": "ai_task",
+    "action": "task",
+    "command": "roast-ai",
+    "description": "Friendly roast",
+    "usage": "/write roast-ai",
+    "group": "write",
+    "options": [
+      {
+        "name": "text",
+        "type": "text",
+        "desc": "Your input",
+        "required": true
+      }
+    ],
+    "prompt": "Write a light-hearted, friendly roast about this (keep it kind, no real insults):\n\n{input}"
+  },
+  {
+    "id": "ai-compliment-gen",
+    "category": "ai",
+    "type": "ai_task",
+    "action": "task",
+    "command": "compliment-gen",
+    "description": "Write a compliment",
+    "usage": "/write compliment-gen",
+    "group": "write",
+    "options": [
+      {
+        "name": "text",
+        "type": "text",
+        "desc": "Your input",
+        "required": true
+      }
+    ],
+    "prompt": "Write a warm, specific compliment about:\n\n{input}"
+  },
+  {
+    "id": "ai-quiz",
+    "category": "ai",
+    "type": "ai_task",
+    "action": "task",
+    "command": "quiz",
+    "description": "Make a quiz",
+    "usage": "/write quiz",
+    "group": "write",
+    "options": [
+      {
+        "name": "text",
+        "type": "text",
+        "desc": "Your input",
+        "required": true
+      }
+    ],
+    "prompt": "Create a 5-question quiz with an answer key at the end, about:\n\n{input}"
+  },
+  {
+    "id": "music-play",
+    "category": "music",
+    "type": "music",
+    "action": "play",
+    "command": "play",
+    "description": "Play a song (YouTube link or search)",
+    "usage": "/play",
+    "marquee": true,
+    "options": [
+      {
+        "name": "query",
+        "type": "text",
+        "desc": "Song name or YouTube link",
+        "required": true
+      }
+    ]
+  },
+  {
+    "id": "music-skip",
+    "category": "music",
+    "type": "music",
+    "action": "skip",
+    "command": "skip",
+    "description": "Skip the current song",
+    "usage": "/skip",
+    "marquee": true
+  },
+  {
+    "id": "music-stop",
+    "category": "music",
+    "type": "music",
+    "action": "stop",
+    "command": "stop",
+    "description": "Stop music and leave voice",
+    "usage": "/stop",
+    "marquee": true
+  },
+  {
+    "id": "music-queue",
+    "category": "music",
+    "type": "music",
+    "action": "queue",
+    "command": "queue",
+    "description": "Show the song queue",
+    "usage": "/queue",
+    "marquee": true
+  },
+  {
+    "id": "mod-kick",
+    "category": "moderation",
+    "type": "mod",
+    "action": "kick",
+    "command": "kick",
+    "description": "Kick a member",
+    "usage": "/mod kick",
+    "group": "mod",
+    "options": [
+      {
+        "name": "member",
+        "type": "member",
+        "desc": "Target member",
+        "required": true
+      },
+      {
+        "name": "reason",
+        "type": "text",
+        "desc": "Reason",
+        "required": false
+      }
+    ],
+    "guild_only": true,
+    "perm": "kick_members"
+  },
+  {
+    "id": "mod-ban",
+    "category": "moderation",
+    "type": "mod",
+    "action": "ban",
+    "command": "ban",
+    "description": "Ban a member",
+    "usage": "/mod ban",
+    "group": "mod",
+    "options": [
+      {
+        "name": "member",
+        "type": "member",
+        "desc": "Target member",
+        "required": true
+      },
+      {
+        "name": "reason",
+        "type": "text",
+        "desc": "Reason",
+        "required": false
+      }
+    ],
+    "guild_only": true,
+    "perm": "ban_members"
+  },
+  {
+    "id": "mod-unban",
+    "category": "moderation",
+    "type": "mod",
+    "action": "unban",
+    "command": "unban",
+    "description": "Unban by user ID",
+    "usage": "/mod unban",
+    "group": "mod",
+    "options": [
+      {
+        "name": "user_id",
+        "type": "text",
+        "desc": "User ID to unban",
+        "required": true
+      }
+    ],
+    "guild_only": true,
+    "perm": "ban_members"
+  },
+  {
+    "id": "mod-timeout",
+    "category": "moderation",
+    "type": "mod",
+    "action": "timeout",
+    "command": "timeout",
+    "description": "Timeout a member",
+    "usage": "/mod timeout",
+    "group": "mod",
+    "options": [
+      {
+        "name": "member",
+        "type": "member",
+        "desc": "Target member",
+        "required": true
+      },
+      {
+        "name": "minutes",
+        "type": "int",
+        "desc": "Minutes",
+        "required": false
+      }
+    ],
+    "guild_only": true,
+    "perm": "moderate_members"
+  },
+  {
+    "id": "mod-warn",
+    "category": "moderation",
+    "type": "mod",
+    "action": "warn",
+    "command": "warn",
+    "description": "Warn a member",
+    "usage": "/mod warn",
+    "group": "mod",
+    "options": [
+      {
+        "name": "member",
+        "type": "member",
+        "desc": "Target member",
+        "required": true
+      },
+      {
+        "name": "reason",
+        "type": "text",
+        "desc": "Reason",
+        "required": false
+      }
+    ],
+    "guild_only": true,
+    "perm": "moderate_members"
+  },
+  {
+    "id": "mod-warnings",
+    "category": "moderation",
+    "type": "mod",
+    "action": "warnings",
+    "command": "warnings",
+    "description": "List a member's warnings",
+    "usage": "/mod warnings",
+    "group": "mod",
+    "options": [
+      {
+        "name": "member",
+        "type": "member",
+        "desc": "Target member",
+        "required": true
+      }
+    ],
+    "guild_only": true,
+    "perm": "moderate_members"
+  },
+  {
+    "id": "mod-clearwarns",
+    "category": "moderation",
+    "type": "mod",
+    "action": "clearwarns",
+    "command": "clearwarns",
+    "description": "Clear a member's warnings",
+    "usage": "/mod clearwarns",
+    "group": "mod",
+    "options": [
+      {
+        "name": "member",
+        "type": "member",
+        "desc": "Target member",
+        "required": true
+      }
+    ],
+    "guild_only": true,
+    "perm": "moderate_members"
+  },
+  {
+    "id": "mod-purge",
+    "category": "moderation",
+    "type": "mod",
+    "action": "purge",
+    "command": "purge",
+    "description": "Bulk delete messages",
+    "usage": "/mod purge",
+    "group": "mod",
+    "options": [
+      {
+        "name": "count",
+        "type": "int",
+        "desc": "How many (1-100)",
+        "required": false
+      }
+    ],
+    "guild_only": true,
+    "perm": "manage_messages"
+  },
+  {
+    "id": "mod-slowmode",
+    "category": "moderation",
+    "type": "mod",
+    "action": "slowmode",
+    "command": "slowmode",
+    "description": "Set channel slowmode",
+    "usage": "/mod slowmode",
+    "group": "mod",
+    "options": [
+      {
+        "name": "seconds",
+        "type": "int",
+        "desc": "Seconds (0 = off)",
+        "required": false
+      }
+    ],
+    "guild_only": true,
+    "perm": "manage_channels"
+  },
+  {
+    "id": "mod-lock",
+    "category": "moderation",
+    "type": "mod",
+    "action": "lock",
+    "command": "lock",
+    "description": "Lock the channel",
+    "usage": "/mod lock",
+    "group": "mod",
+    "guild_only": true,
+    "perm": "manage_channels"
+  },
+  {
+    "id": "mod-unlock",
+    "category": "moderation",
+    "type": "mod",
+    "action": "unlock",
+    "command": "unlock",
+    "description": "Unlock the channel",
+    "usage": "/mod unlock",
+    "group": "mod",
+    "guild_only": true,
+    "perm": "manage_channels"
+  },
+  {
+    "id": "mod-nickname",
+    "category": "moderation",
+    "type": "mod",
+    "action": "nickname",
+    "command": "nickname",
+    "description": "Change a member's nickname",
+    "usage": "/mod nickname",
+    "group": "mod",
+    "options": [
+      {
+        "name": "member",
+        "type": "member",
+        "desc": "Target member",
+        "required": true
+      },
+      {
+        "name": "nickname",
+        "type": "text",
+        "desc": "New nickname (empty = reset)",
+        "required": false
+      }
+    ],
+    "guild_only": true,
+    "perm": "manage_nicknames"
+  },
+  {
+    "id": "fun-8ball",
+    "category": "fun",
+    "type": "fun",
+    "action": "eightball",
+    "command": "eightball",
+    "description": "Magic 8-ball answer",
+    "usage": "/fun eightball",
+    "group": "fun",
+    "options": [
+      {
+        "name": "question",
+        "type": "text",
+        "desc": "Your question",
+        "required": true
+      }
+    ]
+  },
+  {
+    "id": "fun-dice",
+    "category": "fun",
+    "type": "fun",
+    "action": "dice",
+    "command": "dice",
+    "description": "Roll a dice",
+    "usage": "/fun dice",
+    "group": "fun",
+    "options": [
+      {
+        "name": "sides",
+        "type": "int",
+        "desc": "Dice sides",
+        "required": false
+      }
+    ]
+  },
+  {
+    "id": "fun-coinflip",
+    "category": "fun",
+    "type": "fun",
+    "action": "coinflip",
+    "command": "coinflip",
+    "description": "Flip a coin",
+    "usage": "/fun coinflip",
+    "group": "fun"
+  },
+  {
+    "id": "fun-rps",
+    "category": "fun",
+    "type": "fun",
+    "action": "rps",
+    "command": "rps",
+    "description": "Rock paper scissors vs bot",
+    "usage": "/fun rps",
+    "group": "fun",
+    "options": [
+      {
+        "name": "choice",
+        "type": "text",
+        "desc": "rock / paper / scissors",
+        "required": false
+      }
+    ]
+  },
+  {
+    "id": "fun-say",
+    "category": "fun",
+    "type": "fun",
+    "action": "say",
+    "command": "say",
+    "description": "Make the bot say something",
+    "usage": "/fun say",
+    "group": "fun",
+    "options": [
+      {
+        "name": "text",
+        "type": "text",
+        "desc": "Text to say",
+        "required": true
+      }
+    ]
+  },
+  {
+    "id": "fun-clap",
+    "category": "fun",
+    "type": "fun",
+    "action": "clap",
+    "command": "clap",
+    "description": "Add 👏 claps 👏 between 👏 words",
+    "usage": "/fun clap",
+    "group": "fun",
+    "options": [
+      {
+        "name": "text",
+        "type": "text",
+        "desc": "Text",
+        "required": true
+      }
+    ]
+  },
+  {
+    "id": "fun-pick",
+    "category": "fun",
+    "type": "fun",
+    "action": "pick",
+    "command": "pick",
+    "description": "Pick from options",
+    "usage": "/fun pick",
+    "group": "fun",
+    "options": [
+      {
+        "name": "text",
+        "type": "text",
+        "desc": "Options separated by commas",
+        "required": true
+      }
+    ]
+  },
+  {
+    "id": "fun-ship",
+    "category": "fun",
+    "type": "fun",
+    "action": "ship",
+    "command": "ship",
+    "description": "Ship two names",
+    "usage": "/fun ship",
+    "group": "fun",
+    "options": [
+      {
+        "name": "text",
+        "type": "text",
+        "desc": "Two names: 'andi, budi'",
+        "required": true
+      }
+    ]
+  },
+  {
+    "id": "fun-compliment",
+    "category": "fun",
+    "type": "fun",
+    "action": "compliment",
+    "command": "compliment",
+    "description": "Get a compliment",
+    "usage": "/fun compliment",
+    "group": "fun",
+    "options": [
+      {
+        "name": "user",
+        "type": "user",
+        "desc": "Target user",
+        "required": false
+      }
+    ]
+  },
+  {
+    "id": "fun-insult",
+    "category": "fun",
+    "type": "fun",
+    "action": "insult",
+    "command": "insult",
+    "description": "Playful (fake) insult",
+    "usage": "/fun insult",
+    "group": "fun",
+    "options": [
+      {
+        "name": "user",
+        "type": "user",
+        "desc": "Target user",
+        "required": false
+      }
+    ]
+  },
+  {
+    "id": "fun-fakehack",
+    "category": "fun",
+    "type": "fun",
+    "action": "fakehack",
+    "command": "fakehack",
+    "description": "Fake hack someone (for fun)",
+    "usage": "/fun fakehack",
+    "group": "fun",
+    "options": [
+      {
+        "name": "user",
+        "type": "user",
+        "desc": "Target user",
+        "required": false
+      }
+    ]
+  },
+  {
+    "id": "fun-rate",
+    "category": "fun",
+    "type": "fun",
+    "action": "rate",
+    "command": "rate",
+    "description": "Rate someone /10",
+    "usage": "/fun rate",
+    "group": "fun",
+    "options": [
+      {
+        "name": "user",
+        "type": "user",
+        "desc": "Target user",
+        "required": false
+      }
+    ]
+  },
+  {
+    "id": "fun-wyr",
+    "category": "fun",
+    "type": "fun",
+    "action": "wyr",
+    "command": "wyr",
+    "description": "Would you rather...",
+    "usage": "/fun wyr",
+    "group": "fun"
+  },
+  {
+    "id": "fun-topic",
+    "category": "fun",
+    "type": "fun",
+    "action": "topic",
+    "command": "topic",
+    "description": "Random conversation topic",
+    "usage": "/fun topic",
+    "group": "fun"
+  },
+  {
+    "id": "fun-quote",
+    "category": "fun",
+    "type": "fun",
+    "action": "quote",
+    "command": "quote",
+    "description": "Random tech quote",
+    "usage": "/fun quote",
+    "group": "fun"
+  },
+  {
+    "id": "fun-joke",
+    "category": "fun",
+    "type": "fun",
+    "action": "joke",
+    "command": "joke",
+    "description": "Random joke",
+    "usage": "/fun joke",
+    "group": "fun"
+  },
+  {
+    "id": "fun-pun",
+    "category": "fun",
+    "type": "fun",
+    "action": "pun",
+    "command": "pun",
+    "description": "Random pun",
+    "usage": "/fun pun",
+    "group": "fun"
+  },
+  {
+    "id": "fun-fact",
+    "category": "fun",
+    "type": "fun",
+    "action": "fact",
+    "command": "fact",
+    "description": "Random fun fact",
+    "usage": "/fun fact",
+    "group": "fun"
+  },
+  {
+    "id": "fun-fortune",
+    "category": "fun",
+    "type": "fun",
+    "action": "fortune",
+    "command": "fortune",
+    "description": "Random fortune",
+    "usage": "/fun fortune",
+    "group": "fun"
+  },
+  {
+    "id": "fun-meme",
+    "category": "fun",
+    "type": "fun",
+    "action": "meme",
+    "command": "meme",
+    "description": "Random meme",
+    "usage": "/fun meme",
+    "group": "fun"
+  },
+  {
+    "id": "fun-catfact",
+    "category": "fun",
+    "type": "fun",
+    "action": "catfact",
+    "command": "catfact",
+    "description": "Random cat fact",
+    "usage": "/fun catfact",
+    "group": "fun"
+  },
+  {
+    "id": "fun-slap",
+    "category": "fun",
+    "type": "fun",
+    "action": "slap",
+    "command": "slap",
+    "description": "Slap someone",
+    "usage": "/fun slap",
+    "group": "fun",
+    "options": [
+      {
+        "name": "user",
+        "type": "user",
+        "desc": "Who to slap",
+        "required": false
+      }
+    ]
+  },
+  {
+    "id": "fun-hug",
+    "category": "fun",
+    "type": "fun",
+    "action": "hug",
+    "command": "hug",
+    "description": "Hug someone",
+    "usage": "/fun hug",
+    "group": "fun",
+    "options": [
+      {
+        "name": "user",
+        "type": "user",
+        "desc": "Who to hug",
+        "required": false
+      }
+    ]
+  },
+  {
+    "id": "fun-poke",
+    "category": "fun",
+    "type": "fun",
+    "action": "poke",
+    "command": "poke",
+    "description": "Poke someone",
+    "usage": "/fun poke",
+    "group": "fun",
+    "options": [
+      {
+        "name": "user",
+        "type": "user",
+        "desc": "Who to poke",
+        "required": false
+      }
+    ]
+  },
+  {
+    "id": "game-trivia",
+    "category": "games",
+    "type": "game",
+    "action": "trivia",
+    "command": "trivia",
+    "description": "Trivia question / answer",
+    "usage": "/games trivia",
+    "group": "games",
+    "options": [
+      {
+        "name": "guess",
+        "type": "text",
+        "desc": "Your answer (empty = new question)",
+        "required": false
+      }
+    ]
+  },
+  {
+    "id": "game-hangman",
+    "category": "games",
+    "type": "game",
+    "action": "hangman",
+    "command": "hangman",
+    "description": "Hangman",
+    "usage": "/games hangman",
+    "group": "games",
+    "options": [
+      {
+        "name": "guess",
+        "type": "text",
+        "desc": "A letter or the full word (empty = start)",
+        "required": false
+      }
+    ]
+  },
+  {
+    "id": "game-numberguess",
+    "category": "games",
+    "type": "game",
+    "action": "numberguess",
+    "command": "numberguess",
+    "description": "Guess the number 1-100",
+    "usage": "/games numberguess",
+    "group": "games",
+    "options": [
+      {
+        "name": "guess",
+        "type": "int",
+        "desc": "Your guess (empty = start)",
+        "required": false
+      }
+    ]
+  },
+  {
+    "id": "game-mathquiz",
+    "category": "games",
+    "type": "game",
+    "action": "mathquiz",
+    "command": "mathquiz",
+    "description": "Quick math quiz",
+    "usage": "/games mathquiz",
+    "group": "games",
+    "options": [
+      {
+        "name": "answer",
+        "type": "int",
+        "desc": "Your answer (empty = new question)",
+        "required": false
+      }
+    ]
+  },
+  {
+    "id": "game-duel",
+    "category": "games",
+    "type": "game",
+    "action": "duel",
+    "command": "duel",
+    "description": "RPS duel vs the bot",
+    "usage": "/games duel",
+    "group": "games",
+    "options": [
+      {
+        "name": "choice",
+        "type": "text",
+        "desc": "rock / paper / scissors",
+        "required": false
+      }
+    ]
+  },
+  {
+    "id": "eco-daily",
+    "category": "economy",
+    "type": "eco",
+    "action": "daily",
+    "command": "daily",
+    "description": "Claim daily coins",
+    "usage": "/eco daily",
+    "group": "eco"
+  },
+  {
+    "id": "eco-balance",
+    "category": "economy",
+    "type": "eco",
+    "action": "balance",
+    "command": "balance",
+    "description": "Check coin balance",
+    "usage": "/eco balance",
+    "group": "eco",
+    "options": [
+      {
+        "name": "user",
+        "type": "user",
+        "desc": "Target user",
+        "required": false
+      }
+    ]
+  },
+  {
+    "id": "eco-work",
+    "category": "economy",
+    "type": "eco",
+    "action": "work",
+    "command": "work",
+    "description": "Work for coins (1h cooldown)",
+    "usage": "/eco work",
+    "group": "eco"
+  },
+  {
+    "id": "eco-gamble",
+    "category": "economy",
+    "type": "eco",
+    "action": "gamble",
+    "command": "gamble",
+    "description": "Gamble coins",
+    "usage": "/eco gamble",
+    "group": "eco",
+    "options": [
+      {
+        "name": "amount",
+        "type": "int",
+        "desc": "Amount",
+        "required": true
+      }
+    ]
+  },
+  {
+    "id": "eco-slots",
+    "category": "economy",
+    "type": "eco",
+    "action": "slots",
+    "command": "slots",
+    "description": "Slot machine",
+    "usage": "/eco slots",
+    "group": "eco",
+    "options": [
+      {
+        "name": "amount",
+        "type": "int",
+        "desc": "Bet amount",
+        "required": true
+      }
+    ]
+  },
+  {
+    "id": "eco-rob",
+    "category": "economy",
+    "type": "eco",
+    "action": "rob",
+    "command": "rob",
+    "description": "Rob someone (risky!)",
+    "usage": "/eco rob",
+    "group": "eco",
+    "options": [
+      {
+        "name": "user",
+        "type": "user",
+        "desc": "Who to rob",
+        "required": true
+      }
+    ]
+  },
+  {
+    "id": "eco-gift",
+    "category": "economy",
+    "type": "eco",
+    "action": "gift",
+    "command": "gift",
+    "description": "Gift coins",
+    "usage": "/eco gift",
+    "group": "eco",
+    "options": [
+      {
+        "name": "user",
+        "type": "user",
+        "desc": "Who receives",
+        "required": true
+      },
+      {
+        "name": "amount",
+        "type": "int",
+        "desc": "Amount",
+        "required": true
+      }
+    ]
+  },
+  {
+    "id": "eco-shop",
+    "category": "economy",
+    "type": "eco",
+    "action": "shop",
+    "command": "shop",
+    "description": "Show the shop",
+    "usage": "/eco shop",
+    "group": "eco"
+  },
+  {
+    "id": "eco-buy",
+    "category": "economy",
+    "type": "eco",
+    "action": "buy",
+    "command": "buy",
+    "description": "Buy an item",
+    "usage": "/eco buy",
+    "group": "eco",
+    "options": [
+      {
+        "name": "item",
+        "type": "text",
+        "desc": "Item name",
+        "required": true
+      }
+    ]
+  },
+  {
+    "id": "eco-baltop",
+    "category": "economy",
+    "type": "eco",
+    "action": "leaderboard",
+    "command": "baltop",
+    "description": "Coin leaderboard",
+    "usage": "/eco baltop",
+    "group": "eco"
+  },
+  {
+    "id": "lvl-rank",
+    "category": "levels",
+    "type": "levels",
+    "action": "rank",
+    "command": "rank",
+    "description": "Your XP rank",
+    "usage": "/levels rank",
+    "group": "levels"
+  },
+  {
+    "id": "lvl-xptop",
+    "category": "levels",
+    "type": "levels",
+    "action": "leaderboard",
+    "command": "xptop",
+    "description": "XP leaderboard",
+    "usage": "/levels xptop",
+    "group": "levels"
+  },
+  {
+    "id": "soc-welcome",
+    "category": "social",
+    "type": "social",
+    "action": "welcome",
+    "command": "welcome",
+    "description": "Set welcome channel & message",
+    "usage": "/social welcome",
+    "group": "social",
+    "options": [
+      {
+        "name": "channel",
+        "type": "channel",
+        "desc": "Target channel",
+        "required": false
+      },
+      {
+        "name": "message",
+        "type": "text",
+        "desc": "Custom message ({user} placeholder)",
+        "required": false
+      }
+    ],
+    "guild_only": true
+  },
+  {
+    "id": "soc-goodbye",
+    "category": "social",
+    "type": "social",
+    "action": "goodbye",
+    "command": "goodbye",
+    "description": "Set goodbye channel & message",
+    "usage": "/social goodbye",
+    "group": "social",
+    "options": [
+      {
+        "name": "channel",
+        "type": "channel",
+        "desc": "Target channel",
+        "required": false
+      },
+      {
+        "name": "message",
+        "type": "text",
+        "desc": "Custom message ({user} placeholder)",
+        "required": false
+      }
+    ],
+    "guild_only": true
+  },
+  {
+    "id": "soc-autorole",
+    "category": "social",
+    "type": "social",
+    "action": "autorole",
+    "command": "autorole",
+    "description": "Auto-assign a role on join",
+    "usage": "/social autorole",
+    "group": "social",
+    "options": [
+      {
+        "name": "role",
+        "type": "role",
+        "desc": "Role to assign",
+        "required": true
+      }
+    ],
+    "guild_only": true
+  },
+  {
+    "id": "soc-announce",
+    "category": "social",
+    "type": "social",
+    "action": "announce",
+    "command": "announce",
+    "description": "Send an announcement",
+    "usage": "/social announce",
+    "group": "social",
+    "options": [
+      {
+        "name": "text",
+        "type": "text",
+        "desc": "Announcement text",
+        "required": true
+      }
+    ],
+    "guild_only": true
+  },
+  {
+    "id": "util-poll",
+    "category": "utility",
+    "type": "util",
+    "action": "poll",
+    "command": "poll",
+    "description": "Create a reaction poll",
+    "usage": "/util poll",
+    "group": "util",
+    "options": [
+      {
+        "name": "question",
+        "type": "text",
+        "desc": "Poll question",
+        "required": true
+      }
+    ]
+  },
+  {
+    "id": "util-remind",
+    "category": "utility",
+    "type": "util",
+    "action": "remind",
+    "command": "remind",
+    "description": "Set a reminder",
+    "usage": "/util remind",
+    "group": "util",
+    "options": [
+      {
+        "name": "minutes",
+        "type": "int",
+        "desc": "In how many minutes",
+        "required": true
+      },
+      {
+        "name": "text",
+        "type": "text",
+        "desc": "What to remind",
+        "required": false
+      }
+    ]
+  },
+  {
+    "id": "util-reminders",
+    "category": "utility",
+    "type": "util",
+    "action": "reminders-list",
+    "command": "reminders",
+    "description": "List your reminders",
+    "usage": "/util reminders",
+    "group": "util"
+  },
+  {
+    "id": "util-serverinfo",
+    "category": "utility",
+    "type": "util",
+    "action": "serverinfo",
+    "command": "serverinfo",
+    "description": "Server info",
+    "usage": "/util serverinfo",
+    "group": "util",
+    "guild_only": true
+  },
+  {
+    "id": "util-membercount",
+    "category": "utility",
+    "type": "util",
+    "action": "membercount",
+    "command": "membercount",
+    "description": "Member count",
+    "usage": "/util membercount",
+    "group": "util",
+    "guild_only": true
+  },
+  {
+    "id": "util-servercreated",
+    "category": "utility",
+    "type": "util",
+    "action": "servercreated",
+    "command": "servercreated",
+    "description": "Server creation date",
+    "usage": "/util servercreated",
+    "group": "util",
+    "guild_only": true
+  },
+  {
+    "id": "util-userinfo",
+    "category": "utility",
+    "type": "util",
+    "action": "userinfo",
+    "command": "userinfo",
+    "description": "User info",
+    "usage": "/util userinfo",
+    "group": "util",
+    "options": [
+      {
+        "name": "user",
+        "type": "user",
+        "desc": "Target user",
+        "required": false
+      }
+    ],
+    "guild_only": true
+  },
+  {
+    "id": "util-avatar",
+    "category": "utility",
+    "type": "util",
+    "action": "avatar",
+    "command": "avatar",
+    "description": "Show avatar",
+    "usage": "/util avatar",
+    "group": "util",
+    "options": [
+      {
+        "name": "user",
+        "type": "user",
+        "desc": "Target user",
+        "required": false
+      }
+    ],
+    "guild_only": true
+  },
+  {
+    "id": "util-banner",
+    "category": "utility",
+    "type": "util",
+    "action": "banner",
+    "command": "banner",
+    "description": "Show banner",
+    "usage": "/util banner",
+    "group": "util",
+    "options": [
+      {
+        "name": "user",
+        "type": "user",
+        "desc": "Target user",
+        "required": false
+      }
+    ],
+    "guild_only": true
+  },
+  {
+    "id": "util-servericon",
+    "category": "utility",
+    "type": "util",
+    "action": "servericon",
+    "command": "servericon",
+    "description": "Server icon",
+    "usage": "/util servericon",
+    "group": "util",
+    "guild_only": true
+  },
+  {
+    "id": "util-ping",
+    "category": "utility",
+    "type": "util",
+    "action": "ping",
+    "command": "ping",
+    "description": "Check the bot is alive",
+    "usage": "/util ping",
+    "group": "util"
+  },
+  {
+    "id": "util-uptime",
+    "category": "utility",
+    "type": "util",
+    "action": "uptime",
+    "command": "uptime",
+    "description": "Bot uptime",
+    "usage": "/util uptime",
+    "group": "util"
+  },
+  {
+    "id": "util-invite",
+    "category": "utility",
+    "type": "util",
+    "action": "invite",
+    "command": "invite",
+    "description": "How to invite the bot",
+    "usage": "/util invite",
+    "group": "util"
+  },
+  {
+    "id": "util-embed",
+    "category": "utility",
+    "type": "util",
+    "action": "embed",
+    "command": "embed",
+    "description": "Send a fancy embed",
+    "usage": "/util embed",
+    "group": "util",
+    "options": [
+      {
+        "name": "title",
+        "type": "text",
+        "desc": "Embed title",
+        "required": false
+      },
+      {
+        "name": "text",
+        "type": "text",
+        "desc": "Embed text",
+        "required": false
+      }
+    ]
+  },
+  {
+    "id": "util-help",
+    "category": "utility",
+    "type": "util",
+    "action": "help",
+    "command": "help",
+    "description": "Help",
+    "usage": "/util help",
+    "group": "util"
+  },
+  {
+    "id": "util-random",
+    "category": "utility",
+    "type": "util",
+    "action": "random-number",
+    "command": "random",
+    "description": "Random number",
+    "usage": "/util random",
+    "group": "util",
+    "options": [
+      {
+        "name": "min",
+        "type": "int",
+        "desc": "Min",
+        "required": false
+      },
+      {
+        "name": "max",
+        "type": "int",
+        "desc": "Max",
+        "required": false
+      }
+    ]
+  },
+  {
+    "id": "util-color",
+    "category": "utility",
+    "type": "util",
+    "action": "random-color",
+    "command": "color",
+    "description": "Random color",
+    "usage": "/util color",
+    "group": "util"
+  },
+  {
+    "id": "util-calc",
+    "category": "utility",
+    "type": "util",
+    "action": "calc",
+    "command": "calc",
+    "description": "Calculator",
+    "usage": "/util calc",
+    "group": "util",
+    "options": [
+      {
+        "name": "expression",
+        "type": "text",
+        "desc": "Math expression",
+        "required": true
+      }
+    ]
+  },
+  {
+    "id": "util-define",
+    "category": "utility",
+    "type": "util",
+    "action": "define",
+    "command": "define",
+    "description": "Dictionary lookup",
+    "usage": "/util define",
+    "group": "util",
+    "options": [
+      {
+        "name": "word",
+        "type": "text",
+        "desc": "Word",
+        "required": true
+      }
+    ]
+  },
+  {
+    "id": "util-weather",
+    "category": "utility",
+    "type": "util",
+    "action": "weather",
+    "command": "weather",
+    "description": "Current weather",
+    "usage": "/util weather",
+    "group": "util",
+    "options": [
+      {
+        "name": "city",
+        "type": "text",
+        "desc": "City name",
+        "required": true
+      }
+    ]
+  },
+  {
+    "id": "util-time",
+    "category": "utility",
+    "type": "util",
+    "action": "time",
+    "command": "time",
+    "description": "Server time",
+    "usage": "/util time",
+    "group": "util"
+  }
+]

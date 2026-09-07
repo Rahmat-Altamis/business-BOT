@@ -1,0 +1,13 @@
+# secrets — never commit
+.env
+
+# runtime state
+data/
+downloads/
+__pycache__/
+*.pyc
+
+# python
+.venv/
+venv/
+*.egg-info/
