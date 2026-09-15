@@ -1,18 +1,3 @@
-"""Pipeline handlers: every catalog 'type' maps to a real, working handler.
-
-Handlers receive a payload dict:
-    {
-        "entry":      catalog entry dict (id, type, action, prompt, ...),
-        "input":      {option_name: value} from slash command options,
-        "interaction": discord.Interaction (optional context),
-        "discord":    {user_id, username, guild_id, channel_id},
-        "_actor_name": display name of the invoking user,
-        plus injected: _secrets, _runtime, and shared JSON stores.
-    }
-
-Handlers return a str, or a dict {"content", "title", "fields", "image",
-"ephemeral", "poll", "announce"} which the Discord client renders.
-"""
 from __future__ import annotations
 
 import asyncio
@@ -20,15 +5,11 @@ import datetime as dt
 import random
 import re
 import time
-from collections import deque
-from typing import Any, Deque, Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 import aiohttp
-import discord
 
 from ..config import ConfigStore, JSONStore, RuntimeConfig
-
-# ---------------------------------------------------------------- word banks
 
 EIGHTBALL = [
     "It is certain.", "It is decidedly so.", "Without a doubt.",
@@ -118,7 +99,7 @@ TRIVIA = [
     ("What does SQL stand for?", ["structured query language"], "Structured Query Language."),
     ("Which company created Discord?", ["discord", "jason citron"], "Discord Inc. (Jason Citron & Stan Vishnevskiy)."),
     ("What is 2^10?", ["1024"], "1024."),
-    ("What language has the #hashtag 'snek'?", ["python"], "Python."),
+    ("What language has the mascot 'snek'?", ["python"], "Python."),
     ("What does RAM stand for?", ["random access memory"], "Random Access Memory."),
 ]
 HANGMAN_WORDS = [
@@ -173,9 +154,6 @@ def _input_text(payload: Dict[str, Any]) -> str:
         ).strip()
     return str(inp or "").strip()
 
-
-# ---------------------------------------------------------------- AI handlers
-
 async def ai_chat(payload: Dict[str, Any]) -> Any:
     runtime: RuntimeConfig = payload["_runtime"]
     secrets: ConfigStore = payload["_secrets"]
@@ -183,11 +161,11 @@ async def ai_chat(payload: Dict[str, Any]) -> Any:
     provider = AI_PROVIDERS.get(ai.get("provider", "fireworks"), AI_PROVIDERS["fireworks"])
     api_key = secrets.get(provider["key"])
     if not api_key:
-        return "AI belum dikonfigurasi. Minta admin set API key lewat dashboard Settings."
+        return "AI isn't configured yet. Ask an admin to set the API key from the dashboard Settings page."
 
     user_input = _input_text(payload)
     if not user_input:
-        return "Ketik sesuatu dulu ya."
+        return "Type something first."
 
     system_prompt = (
         payload.get("_system_prompt")
@@ -215,14 +193,14 @@ async def ai_chat(payload: Dict[str, Any]) -> Any:
                     msg = data.get("error", {}).get("message") or data.get("message") or f"HTTP {resp.status}"
                     return f"AI provider error: {msg}"
     except asyncio.TimeoutError:
-        return "AI service-nya lagi lambat/time out. Coba lagi nanti ya."
+        return "The AI service timed out. Please try again later."
     except aiohttp.ClientError as exc:
-        return f"Gagal nyambung ke AI service: {exc.__class__.__name__}"
+        return f"Couldn't reach the AI service: {exc.__class__.__name__}"
 
     try:
         text = data["choices"][0]["message"]["content"].strip()
     except (KeyError, IndexError, TypeError):
-        return "AI-nya balas dengan format aneh. Coba lagi."
+        return "The AI returned an unexpected response format. Please try again."
 
     if len(text) > 1990:
         text = text[:1990] + "…"
@@ -234,19 +212,16 @@ async def ai_task(payload: Dict[str, Any]) -> Any:
     prompt_template: str = _d(payload, "entry", "prompt", default="Help with: {input}")
     user_input = _input_text(payload)
     if not user_input:
-        return "Kasih input-nya dulu."
+        return "Provide some input first."
     override = prompt_template.replace("{input}", user_input)
     return await ai_chat({**payload, "_system_prompt": override})
-
-
-# ---------------------------------------------------------------- music
 
 async def music_resolve(payload: Dict[str, Any]) -> Dict[str, Any]:
     import yt_dlp
 
     query = _input_text(payload)
     if not query:
-        raise ValueError("Kasih judul lagu atau link YouTube dulu.")
+        raise ValueError("Provide a song title or YouTube link first.")
 
     ydl_opts = {
         "format": "bestaudio/best",
@@ -263,10 +238,10 @@ async def music_resolve(payload: Dict[str, Any]) -> Dict[str, Any]:
         if info and "entries" in info:
             entries = [e for e in info["entries"] if e]
             if not entries:
-                raise ValueError(f"Gak nemu hasil untuk: {query}")
+                raise ValueError(f"No results found for: {query}")
             info = entries[0]
         if not info:
-            raise ValueError(f"Gak nemu hasil untuk: {query}")
+            raise ValueError(f"No results found for: {query}")
         return {
             "title": info.get("title", "Unknown"),
             "url": info["url"],
@@ -276,136 +251,13 @@ async def music_resolve(payload: Dict[str, Any]) -> Dict[str, Any]:
 
     return await asyncio.to_thread(_extract)
 
-
-FFMPEG_OPTIONS = {
-    "before_options": "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5",
-    "options": "-vn",
-}
-
-
-class _MusicState:
-    """Per-guild music queue + voice connection. Lives here, not in the client,
-    since queueing/playback is bot behaviour, not Discord I/O plumbing."""
-
-    def __init__(self) -> None:
-        self.queue: Deque[Dict[str, Any]] = deque()
-        self.voice: Optional[discord.VoiceClient] = None
-        self.current: Optional[Dict[str, Any]] = None
-
-
-_MUSIC_STATES: Dict[int, _MusicState] = {}
-
-
-def _music_state(guild_id: Optional[int]) -> _MusicState:
-    key = guild_id or 0
-    if key not in _MUSIC_STATES:
-        _MUSIC_STATES[key] = _MusicState()
-    return _MUSIC_STATES[key]
-
-
-async def _music_start_playing(guild_id: Optional[int], text_channel) -> None:
-    state = _music_state(guild_id)
-    if not state.queue or state.voice is None:
-        state.current = None
-        return
-    track = state.queue.popleft()
-    state.current = track
-    source = discord.FFmpegPCMAudio(track["url"], **FFMPEG_OPTIONS)
-    loop = asyncio.get_running_loop()
-
-    def _after(error: Optional[Exception]) -> None:
-        asyncio.run_coroutine_threadsafe(_music_advance(guild_id, text_channel), loop)
-
-    state.voice.play(source, after=_after)
-
-
-async def _music_advance(guild_id: Optional[int], text_channel) -> None:
-    state = _music_state(guild_id)
-    if not state.queue:
-        state.current = None
-        return
-    await _music_start_playing(guild_id, text_channel)
-    if text_channel is not None and state.current is not None:
-        try:
-            await text_channel.send(f"▶️ Now playing: **{state.current['title']}**")
-        except Exception:
-            pass
-
-
-async def close_music_connections() -> None:
-    """Disconnect + clear all guild voice sessions. Called once on shutdown."""
-    for state in _MUSIC_STATES.values():
-        state.queue.clear()
-        state.current = None
-        if state.voice and state.voice.is_connected():
-            try:
-                await state.voice.disconnect()
-            except Exception:
-                pass
-        state.voice = None
-
-
-async def music(payload: Dict[str, Any]) -> Any:
-    """Play/skip/stop/queue. The client only defers + forwards this call and
-    renders whatever comes back — all queue/voice-connection logic lives here."""
-    entry = payload["entry"]
-    action = entry.get("action")
-    interaction = payload.get("interaction")
-    state = _music_state(interaction.guild_id if interaction else None)
-
-    if action == "play":
-        user_voice = interaction.user.voice if isinstance(interaction.user, discord.Member) else None
-        if user_voice is None or user_voice.channel is None:
-            return "Join voice channel dulu baru pakai /music-play ya."
-        track = await music_resolve(payload)
-        state.queue.append(track)
-        if state.voice is None or not state.voice.is_connected():
-            state.voice = await user_voice.channel.connect()
-        elif state.voice.channel != user_voice.channel:
-            await state.voice.move_to(user_voice.channel)
-        if state.current is None and not state.voice.is_playing():
-            await _music_start_playing(interaction.guild_id, interaction.channel)
-            return f"▶️ Now playing: **{track['title']}**"
-        return f"➕ Ditambahin ke antrian: **{track['title']}**"
-
-    if action == "skip":
-        if state.voice and (state.voice.is_playing() or state.voice.is_paused()):
-            state.voice.stop()
-            return "⏭️ Skipped."
-        return "Gak ada lagu yang lagi diputar."
-
-    if action == "stop":
-        state.queue.clear()
-        state.current = None
-        if state.voice and state.voice.is_connected():
-            state.voice.stop()
-            await state.voice.disconnect()
-        state.voice = None
-        return "⏹️ Stopped, keluar dari voice channel."
-
-    if action == "queue":
-        lines = []
-        if state.current:
-            lines.append(f"▶️ Now playing: **{state.current['title']}**")
-        if state.queue:
-            lines.append("\nUp next:")
-            lines.extend(f"{i}. {t['title']}" for i, t in enumerate(state.queue, start=1))
-        if not lines:
-            lines = ["Antrian kosong."]
-        return {"content": "\n".join(lines), "ephemeral": True}
-
-    return f"Aksi music '{action}' belum ada."
-
-
-# ---------------------------------------------------------------- moderation
-
 async def mod(payload: Dict[str, Any]) -> Any:
     interaction = payload.get("interaction")
     action = _d(payload, "entry", "action")
     inp = _d(payload, "input") or {}
     guild = interaction.guild if interaction else None
     if guild is None:
-        return "Command ini cuma jalan di server."
+        return "This command only works inside a server."
 
     warnings_store: JSONStore = payload["_warnings"]
     actor = interaction.user
@@ -416,46 +268,46 @@ async def mod(payload: Dict[str, Any]) -> Any:
     if action == "kick":
         member = inp.get("member")
         if not _perm("kick_members"):
-            return "Kamu gak punya permission Kick Members."
+            return "You don't have the Kick Members permission."
         reason = str(inp.get("reason") or "No reason given")
         await member.kick(reason=f"{actor}: {reason}")
-        return f"👢 **{member.display_name}** dikick. Alasan: {reason}"
+        return f"👢 **{member.display_name}** was kicked. Reason: {reason}"
 
     if action == "ban":
         member = inp.get("member")
         if not _perm("ban_members"):
-            return "Kamu gak punya permission Ban Members."
+            return "You don't have the Ban Members permission."
         reason = str(inp.get("reason") or "No reason given")
         await member.ban(reason=f"{actor}: {reason}")
-        return f"🔨 **{member.display_name}** diban. Alasan: {reason}"
+        return f"🔨 **{member.display_name}** was banned. Reason: {reason}"
 
     if action == "unban":
         if not _perm("ban_members"):
-            return "Kamu gak punya permission Ban Members."
+            return "You don't have the Ban Members permission."
         user_id = str(inp.get("user_id") or "").strip()
         if not user_id.isdigit():
-            return "Kasih user ID yang valid."
+            return "Provide a valid user ID."
         banned = [b async for b in guild.bans(limit=200)]
         match = next((b for b in banned if str(b.user.id) == user_id), None)
         if match is None:
-            return "User itu gak ada di ban list."
+            return "That user isn't on the ban list."
         await guild.unban(match.user)
-        return f"✅ {match.user} udah di-unban."
+        return f"✅ {match.user} has been unbanned."
 
     if action == "timeout":
         member = inp.get("member")
         minutes = int(inp.get("minutes") or 10)
         if not _perm("moderate_members"):
-            return "Kamu gak punya permission Timeout Members."
+            return "You don't have the Timeout Members permission."
         until = dt.datetime.now(dt.timezone.utc) + dt.timedelta(minutes=max(1, min(40320, minutes)))
         await member.timeout(until, reason=f"timeout by {actor}")
-        return f"🔇 **{member.display_name}** di-timeout {minutes} menit."
+        return f"🔇 **{member.display_name}** was timed out for {minutes} minutes."
 
     if action == "warn":
         member = inp.get("member")
         reason = str(inp.get("reason") or "No reason given")
         if not _perm("moderate_members") and not _perm("kick_members"):
-            return "Kamu gak punya permission moderasi."
+            return "You don't have a moderation permission for this."
         gid, uid = str(guild.id), str(member.id)
 
         def _add_warn(d: dict) -> dict:
@@ -466,24 +318,24 @@ async def mod(payload: Dict[str, Any]) -> Any:
 
         warnings_store.update(_add_warn)
         count = len(warnings_store.read().get(gid, {}).get(uid, []))
-        return f"⚠️ **{member.display_name}** diperingatkan ({count} total). Alasan: {reason}"
+        return f"⚠️ **{member.display_name}** has been warned ({count} total). Reason: {reason}"
 
     if action == "warnings":
         member = inp.get("member")
         gid, uid = str(guild.id), str(member.id)
         warns = warnings_store.read().get(gid, {}).get(uid, [])
         if not warns:
-            return f"**{member.display_name}** bersih, gak ada warning. ✨"
-        lines = [f"⚠️ **{member.display_name}** punya {len(warns)} warning:"]
+            return f"**{member.display_name}** has a clean record — no warnings. ✨"
+        lines = [f"⚠️ **{member.display_name}** has {len(warns)} warning(s):"]
         for i, w in enumerate(warns[-10:], 1):
             when = dt.datetime.fromtimestamp(w["ts"]).strftime("%d/%m/%y")
-            lines.append(f"{i}. [{when}] {w['reason']} — oleh {w['by']}")
+            lines.append(f"{i}. [{when}] {w['reason']} — by {w['by']}")
         return "\n".join(lines)
 
     if action == "clearwarns":
         member = inp.get("member")
         if not _perm("moderate_members"):
-            return "Kamu gak punya permission moderasi."
+            return "You don't have a moderation permission for this."
         gid, uid = str(guild.id), str(member.id)
 
         def _clear(d: dict) -> dict:
@@ -491,50 +343,48 @@ async def mod(payload: Dict[str, Any]) -> Any:
             return d
 
         warnings_store.update(_clear)
-        return f"🧹 Warning **{member.display_name}** dibersihkan."
+        return f"🧹 Warnings for **{member.display_name}** have been cleared."
 
     if action == "purge":
         if not _perm("manage_messages"):
-            return "Kamu gak punya permission Manage Messages."
+            return "You don't have the Manage Messages permission."
         count = max(1, min(100, int(inp.get("count") or 5)))
         deleted = await interaction.channel.purge(limit=count)
-        return f"🧹 {len(deleted)} pesan dihapus."
+        return f"🧹 Deleted {len(deleted)} message(s)."
 
     if action == "slowmode":
         if not _perm("manage_channels"):
-            return "Kamu gak punya permission Manage Channels."
+            return "You don't have the Manage Channels permission."
         seconds = max(0, min(21600, int(inp.get("seconds") or 0)))
         await interaction.channel.edit(slowmode_delay=seconds)
-        return f"🐢 Slowmode: {seconds}s."
+        return f"🐢 Slowmode set to {seconds}s."
 
     if action == "lock":
         if not _perm("manage_channels"):
-            return "Kamu gak punya permission Manage Channels."
+            return "You don't have the Manage Channels permission."
         overwrite = interaction.channel.overwrites_for(guild.default_role)
         overwrite.send_messages = False
         await interaction.channel.set_overwrites(guild.default_role, overwrite)
-        return "🔒 Channel dikunci."
+        return "🔒 Channel locked."
 
     if action == "unlock":
         if not _perm("manage_channels"):
-            return "Kamu gak punya permission Manage Channels."
+            return "You don't have the Manage Channels permission."
         overwrite = interaction.channel.overwrites_for(guild.default_role)
         overwrite.send_messages = None
         await interaction.channel.set_overwrites(guild.default_role, overwrite)
-        return "🔓 Channel dibuka."
+        return "🔓 Channel unlocked."
 
     if action == "nickname":
         if not _perm("manage_nicknames"):
-            return "Kamu gak punya permission Manage Nicknames."
+            return "You don't have the Manage Nicknames permission."
         member = inp.get("member")
         new_nick = str(inp.get("nickname") or "").strip() or None
         await member.edit(nick=new_nick)
-        return f"✏️ Nickname {member.display_name} → {new_nick or '(reset)'}"
+        return f"✏️ Nickname for {member.display_name} → {new_nick or '(reset)'}"
 
-    return f"Aksi moderasi '{action}' belum dikenal."
+    return f"Moderation action '{action}' isn't recognized."
 
-
-# ---------------------------------------------------------------- fun
 
 async def fun(payload: Dict[str, Any]) -> Any:
     action = _d(payload, "entry", "action")
@@ -549,7 +399,7 @@ async def fun(payload: Dict[str, Any]) -> Any:
 
     if action == "eightball":
         if not text:
-            return "Nanya dulu dong."
+            return "Ask a question first."
         return f"🎱 {random.choice(EIGHTBALL)}"
     if action == "dice":
         sides = max(2, min(1000, int(inp.get("sides") or 6)))
@@ -559,49 +409,49 @@ async def fun(payload: Dict[str, Any]) -> Any:
     if action == "rps":
         choice = (str(inp.get("choice") or "") or text or "rock").lower()
         if choice not in RPS:
-            return "Pilih rock/paper/scissors ya."
+            return "Pick rock, paper, or scissors."
         bot = random.choice(list(RPS))
         win = {"rock": "scissors", "paper": "rock", "scissors": "paper"}
-        outcome = "Seri! 🤝" if bot == choice else (
-            "Kamu menang! 🎉" if win[choice] == bot else "Aku menang! 🤖"
+        outcome = "It's a tie! 🤝" if bot == choice else (
+            "You win! 🎉" if win[choice] == bot else "I win! 🤖"
         )
         return f"{RPS[choice]} vs {RPS[bot]} — {outcome}"
     if action == "say":
         if not text:
-            return "Kasih teks yang mau diucapin."
+            return "Give me some text to say."
         return text[:1900]
     if action == "clap":
         if not text:
-            return "Kasih teksnya."
+            return "Give me some text."
         return "👏 " + " 👏 ".join(text.split()) + " 👏"
     if action == "pick":
         opts = [o.strip() for o in re.split(r"[,|/]", text) if o.strip()]
         if len(opts) < 2:
-            return "Kasih beberapa pilihan, misal: 'pizza, sushi, bakso'"
-        return f"👉 Aku pilih **{random.choice(opts)}**"
+            return "Give me a few options, e.g. 'pizza, sushi, ramen'."
+        return f"👉 I pick **{random.choice(opts)}**"
     if action in ("ship", "lovecalc"):
         names = [o.strip() for o in re.split(r"[,|/xX×]", text) if o.strip()]
         if len(names) < 2:
-            return "Kasih dua nama, misal: 'andi, budi'"
+            return "Give me two names, e.g. 'alex, sam'."
         score = random.randint(0, 100)
         meter = "❤️" * max(1, score // 10) + "🖤" * (10 - max(1, score // 10))
         return f"💖 {names[0]} + {names[1]} = **{score}%**\n{meter}"
     if action == "compliment":
         return f"💕 {_target_name()}: {random.choice(COMPLIMENTS)}"
     if action == "insult":
-        return f"🔥 {_target_name()}: {random.choice(INSULTS)} (bercanda ya)"
+        return f"🔥 {_target_name()}: {random.choice(INSULTS)} (just kidding)"
     if action == "fakehack":
         steps = [
-            "Mencari sinyal wifi...", "Bobol firewall...", "Download RAM...",
-            "Bypass mainframe...", "Akses granted.",
+            "Searching for wifi signal...", "Bypassing firewall...", "Downloading RAM...",
+            "Bypassing mainframe...", "Access granted.",
         ]
-        return f"💻 **Hacking {_target_name()}...**\n" + "\n".join(f"`> {s}`" for s in steps) + "\n✅ Hack sukses (fake, santai)."
+        return f"💻 **Hacking {_target_name()}...**\n" + "\n".join(f"`> {s}`" for s in steps) + "\n✅ Hack successful (not real, relax)."
     if action == "rate":
-        return f"⭐ {_target_name()} dapet rating **{random.randint(1, 10)}/10**"
+        return f"⭐ {_target_name()} gets a rating of **{random.randint(1, 10)}/10**"
     if action == "wyr":
         return f"🤔 {random.choice(WYR)}"
     if action == "topic":
-        return f"💬 Topik hari ini: {random.choice(TOPICS)}"
+        return f"💬 Today's topic: {random.choice(TOPICS)}"
     if action == "quote":
         q, who = random.choice(QUOTES)
         return f"❝{q}❞ — **{who}**"
@@ -621,28 +471,25 @@ async def fun(payload: Dict[str, Any]) -> Any:
                     data = await resp.json()
             return {"content": f"😂 **{data.get('title', 'meme')}**", "image": data.get("url")}
         except Exception:
-            return "Meme service lagi down. Coba lagi nanti."
+            return "The meme service is down right now. Try again later."
     if action == "catfact":
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.get("https://catfact.ninja/fact",
                                        timeout=aiohttp.ClientTimeout(total=15)) as resp:
                     data = await resp.json()
-            return f"🐱 {data.get('fact', 'Kucing itu lucu.')}"
+            return f"🐱 {data.get('fact', 'Cats are cute.')}"
         except Exception:
-            return "Cat fact service lagi down."
+            return "The cat facts service is down right now."
     if action in ("slap", "hug", "poke"):
         t = inp.get("user")
         if t is None:
-            return "Tag orangnya dulu ya."
-        actor = payload.get("_actor_name") or "Seseorang"
+            return "Tag the person first."
+        actor = payload.get("_actor_name") or "Someone"
         emoji = {"slap": "👋", "hug": "🤗", "poke": "👉"}[action]
-        verb = {"slap": "menampar", "hug": "meluk", "poke": "menyenggol"}[action]
+        verb = {"slap": "slaps", "hug": "hugs", "poke": "pokes"}[action]
         return f"{emoji} **{actor}** {verb} **{t.display_name}**!"
-    return f"Fun action '{action}' belum ada."
-
-
-# ---------------------------------------------------------------- games
+    return f"Fun action '{action}' doesn't exist yet."
 
 GAMES: Dict[int, Dict[str, Any]] = {}
 
@@ -662,11 +509,11 @@ async def game(payload: Dict[str, Any]) -> Any:
             guess = str(inp.get("guess")).lower().strip()
             if guess in g["answers"]:
                 GAMES.pop(key, None)
-                return f"✅ Betul! Jawabannya **{g['answer']}**. Poin untuk <@{payload['discord']['user_id']}>!"
-            return f"❌ Belum tepat. Hint: **{g['answer'][:1]}...** — coba `/games trivia` lagi dengan `guess`."
+                return f"✅ Correct! The answer was **{g['answer']}**. Point goes to <@{payload['discord']['user_id']}>!"
+            return f"❌ Not quite. Hint: **{g['answer'][:1]}...** — try `/games trivia` again with `guess`."
         q = random.choice(TRIVIA)
         GAMES[key] = {"type": "trivia", "answers": q[1], "answer": q[2]}
-        return f"🧠 **Trivia:** {q[0]}\n_(jawab dengan `/games trivia` + `guess:<jawaban>`)_"
+        return f"🧠 **Trivia:** {q[0]}\n_(answer with `/games trivia` + `guess:<answer>`)_"
 
     if action == "hangman":
         guess_text = str(inp.get("guess") or "").strip()
@@ -677,42 +524,42 @@ async def game(payload: Dict[str, Any]) -> Any:
         else:
             g = GAMES.get(key)
             if not g or g.get("type") != "hangman":
-                return "Belum ada game hangman. Start dulu: `/games hangman` (tanpa guess)."
+                return "There's no hangman game running. Start one with `/games hangman` (no guess)."
             ch = guess_text.lower()
             if len(ch) == 1:
                 g["guessed"].add(ch)
             elif ch == g["word"]:
                 GAMES.pop(key, None)
-                return f"🎉 Betul sekali kata! **{g['word']}**"
+                return f"🎉 You got the whole word! **{g['word']}**"
             else:
                 g["tries"] -= 1
         mask = "".join(c if c in g["guessed"] else "_" for c in g["word"])
         if "_" not in mask:
             GAMES.pop(key, None)
-            return f"🎉 Selesai! Katanya: **{g['word']}**"
+            return f"🎉 Solved! The word was: **{g['word']}**"
         if g["tries"] <= 0:
             word = g["word"]
             GAMES.pop(key, None)
-            return f"💀 Kalah! Katanya: **{word}**"
-        return f"🎭 `{mask}` — nyawa: {'❤️' * g['tries']} — tebak: `/games hangman guess:<huruf>`"
+            return f"💀 You lost! The word was: **{word}**"
+        return f"🎭 `{mask}` — lives left: {'❤️' * g['tries']} — guess with `/games hangman guess:<letter>`"
 
     if action == "numberguess":
         if not g or g.get("type") != "numberguess":
             GAMES[key] = {"type": "numberguess", "n": random.randint(1, 100), "tries": 7}
-            return "🔢 Aku mikirin angka 1-100. Kasih `/games numberguess guess:<angka>` (7 nyawa)."
+            return "🔢 I'm thinking of a number between 1-100. Guess with `/games numberguess guess:<number>` (7 lives)."
         guess = inp.get("guess")
         if guess is None:
-            return "Kasih angka tebakanmu."
+            return "Give me your guess."
         g["tries"] -= 1
         n = g["n"]
         if int(guess) == n:
             GAMES.pop(key, None)
-            return f"🎉 **{n}** bener! Kamu menang!"
+            return f"🎉 **{n}** is correct! You win!"
         if g["tries"] <= 0:
             GAMES.pop(key, None)
-            return f"💀 Nyawa habis. Angkanya **{n}**."
-        hint = "kegedean 📈" if int(guess) > n else "kekecilan 📉"
-        return f"❌ {hint} — sisa nyawa: {g['tries']}"
+            return f"💀 Out of lives. The number was **{n}**."
+        hint = "too high 📈" if int(guess) > n else "too low 📉"
+        return f"❌ {hint} — lives left: {g['tries']}"
 
     if action in ("mathquiz", "mathanswer"):
         g = GAMES.get(key)
@@ -720,23 +567,21 @@ async def game(payload: Dict[str, Any]) -> Any:
             try:
                 if int(inp["answer"]) == g["answer"]:
                     GAMES.pop(key, None)
-                    return f"✅ Bener! {g['answer']} 🎉"
+                    return f"✅ Correct! {g['answer']} 🎉"
             except (TypeError, ValueError):
                 pass
-            return "❌ Belum. Coba lagi (soal masih aktif)."
+            return "❌ Not yet. Try again (the question is still active)."
         a, b = random.randint(2, 15), random.randint(2, 15)
         op = random.choice(["+", "-", "*"])
         answer = a + b if op == "+" else (a - b if op == "-" else a * b)
         GAMES[key] = {"type": "math", "answer": answer}
-        return f"🧮 Berapa **{a} {op} {b}**? Kasih `/mathquiz answer:<jawaban>`."
+        return f"🧮 What's **{a} {op} {b}**? Answer with `/mathquiz answer:<answer>`."
 
     if action == "duel":
         return await fun({**payload, "entry": {**payload["entry"], "action": "rps"}})
 
-    return f"Game '{action}' belum ada."
+    return f"Game '{action}' doesn't exist yet."
 
-
-# ---------------------------------------------------------------- economy
 
 def _eco_user(store: JSONStore, user_id: int) -> Dict[str, Any]:
     data = store.read()
@@ -761,129 +606,127 @@ async def eco(payload: Dict[str, Any]) -> Any:
     if action == "daily":
         if _now() - u["daily"] < COOLDOWN_DAILY:
             left = int((COOLDOWN_DAILY - (_now() - u["daily"])) / 3600) + 1
-            return f"⏳ Daily-nya udah di-claim. Tunggu ~{left} jam lagi."
+            return f"⏳ You've already claimed your daily. Wait ~{left} more hour(s)."
         u["daily"] = _now()
         u["balance"] += 100
         _save(u)
-        return f"🎁 +100 koin harian! Balance: **{u['balance']}**"
+        return f"🎁 +100 daily coins! Balance: **{u['balance']}**"
     if action == "balance":
         target = inp.get("user")
         if target is not None:
             t = _eco_user(store, int(target.id))
-            return f"💰 **{target.display_name}**: {t['balance']} koin, item: {len(t.get('items', []))}"
-        return f"💰 Kamu punya **{u['balance']}** koin, item: {len(u.get('items', []))}"
+            return f"💰 **{target.display_name}**: {t['balance']} coins, items: {len(t.get('items', []))}"
+        return f"💰 You have **{u['balance']}** coins, items: {len(u.get('items', []))}"
     if action == "work":
         if _now() - u["work"] < COOLDOWN_WORK:
-            return "⏳ Baru kerja tadi. Istirahat dulu (1 jam cooldown)."
+            return "You just finished work — wait 1 hour for the cooldown to reset."
         u["work"] = _now()
         pay = random.randint(20, 80)
         u["balance"] += pay
         _save(u)
-        return f"💼 Kerja selesai! +{pay} koin. Balance: **{u['balance']}**"
+        return f"Work done! +{pay} coins. Balance: **{u['balance']}**"
     if action == "gamble":
         try:
             amount = int(inp.get("amount") or 0)
         except (TypeError, ValueError):
-            return "Jumlah gamble gak valid."
+            return "Invalid gamble amount."
         if amount <= 0 or amount > u["balance"]:
-            return "Jumlah gamble gak valid / koin gak cukup."
+            return "Invalid gamble amount."
         if random.random() < 0.45:
             u["balance"] += amount
             _save(u)
-            return f"🎲 Menang! +{amount}. Balance: **{u['balance']}**"
+            return f"Jackpot! +{amount}. Balance: **{u['balance']}**"
         u["balance"] -= amount
         _save(u)
-        return f"🎲 Kalah... -{amount}. Balance: **{u['balance']}**"
+        return f"You lost... -{amount}. Balance: **{u['balance']}**"
     if action == "slots":
         try:
             amount = int(inp.get("amount") or 0)
         except (TypeError, ValueError):
-            return "Jumlah bet gak valid."
+            return "Invalid bet amount."
         if amount <= 0 or amount > u["balance"]:
-            return "Jumlah bet gak valid / koin gak cukup."
+            return "Invalid bet amount or insufficient coins."
         reels = [random.choice(SLOT_SYMBOLS) for _ in range(3)]
         display = " | ".join(reels)
         if reels[0] == reels[1] == reels[2]:
             u["balance"] += amount * 4
             _save(u)
-            return f"🎰 {display} — JACKPOT! +{amount * 4}. Balance: **{u['balance']}**"
+            return f"{display} — jackpot! +{amount * 4}. Balance: **{u['balance']}**"
         if reels[0] == reels[1] or reels[1] == reels[2] or reels[0] == reels[2]:
             u["balance"] += amount
             _save(u)
-            return f"🎰 {display} — duo! +{amount}. Balance: **{u['balance']}**"
+            return f"{display} — pair! +{amount}. Balance: **{u['balance']}**"
         u["balance"] -= amount
         _save(u)
-        return f"🎰 {display} — zonk. -{amount}. Balance: **{u['balance']}**"
+        return f"{display} — no luck. -{amount}. Balance: **{u['balance']}**"
     if action == "rob":
         target = inp.get("user")
         if target is None:
-            return "Siapa yang mau di-rob?"
+            return "Who do you want to rob?"
         t_id = int(target.id)
         if t_id == user_id:
-            return "Rob diri sendiri gak bisa. 😐"
+            return "You can't rob yourself."
         t = _eco_user(store, t_id)
         if t["balance"] < 50:
-            return f"**{target.display_name}** gak punya apa-apa buat di-rob."
+            return f"**{target.display_name}** doesn't have anything worth robbing."
         if random.random() < 0.5:
             stolen = random.randint(10, min(200, t["balance"]))
             t["balance"] -= stolen
             u["balance"] += stolen
             store.update(lambda d: d.__setitem__(str(t_id), t))
             _save(u)
-            return f"🥷 Sukses nyolong {stolen} koin dari **{target.display_name}**!"
+            return f"Success! Stole {stolen} coins from **{target.display_name}**!"
         fine = 30
         u["balance"] = max(0, u["balance"] - fine)
         _save(u)
-        return f"🚨 Ketahuan! Denda {fine} koin."
+        return f"Caught! Fined {fine} coins."
     if action == "gift":
         target = inp.get("user")
         if target is None:
-            return "Siapa yang mau dikirimi koin?"
+            return "Who do you want to send coins to?"
         t_id = int(target.id)
         if t_id == user_id:
-            return "Gift ke diri sendiri gak bisa."
+            return "You can't gift coins to yourself."
         try:
             amount = int(inp.get("amount") or 0)
         except (TypeError, ValueError):
-            return "Jumlah gift gak valid."
+            return "Invalid gift amount."
         if amount <= 0 or amount > u["balance"]:
-            return "Jumlah gift gak valid / koin gak cukup."
+            return "Invalid gift amount or insufficient coins."
         t = _eco_user(store, t_id)
         u["balance"] -= amount
         t["balance"] += amount
         store.update(lambda d: d.__setitem__(str(t_id), t))
         _save(u)
-        return f"🎁 Kamu ngasih **{amount}** koin ke **{target.display_name}**."
+        return f"🎁 You gave **{amount}** coins to **{target.display_name}**."
     if action == "shop":
-        lines = [f"🏪 **Toko** — koin kamu: {u['balance']}", "```"]
+        lines = [f"**Market** — your coins: {u['balance']}", "```"]
         for item, price in SHOP_ITEMS.items():
-            lines.append(f"{item:<20} {price} koin")
+            lines.append(f"{item:<20} {price} coins")
         lines.append("```")
-        lines.append("Beli: `/eco buy item:<nama>`")
+        lines.append("Buy: `/eco buy item:<name>`")
         return "\n".join(lines)
     if action == "buy":
         item = str(inp.get("item") or "").strip().lower()
         if item not in SHOP_ITEMS:
-            return f"Item '{item}' gak ada di toko. Lihat `/eco shop`."
+            return f"Item '{item}' isn't in the shop catalog. See `/eco shop`."
         if u["balance"] < SHOP_ITEMS[item]:
-            return "Koin gak cukup. Kerja dulu 💼"
+            return "Insufficient funds — go work first."
         u["balance"] -= SHOP_ITEMS[item]
         u.setdefault("items", []).append(item)
         _save(u)
-        return f"🛒 Kamu beli **{item}**. Balance: **{u['balance']}**"
+        return f"You bought **{item}**. Balance: **{u['balance']}**"
     if action == "leaderboard":
         data = store.read()
         top = sorted(data.items(), key=lambda kv: kv[1].get("balance", 0), reverse=True)[:10]
         if not top:
-            return "Belum ada yang punya koin."
-        lines = ["🏆 **Leaderboard Koin**"]
+            return "No one has any coins yet."
+        lines = ["Coin leaderboard"]
         for i, (uid, ud) in enumerate(top, 1):
-            lines.append(f"{i}. <@{uid}> — {ud.get('balance', 0)} koin")
+            lines.append(f"{i}. <@{uid}> — {ud.get('balance', 0)} coins")
         return "\n".join(lines)
-    return f"Economy action '{action}' belum ada."
+    return f"Economy action '{action}' not found."
 
-
-# ---------------------------------------------------------------- levels
 
 async def levels(payload: Dict[str, Any]) -> Any:
     action = _d(payload, "entry", "action")
@@ -904,22 +747,20 @@ async def levels(payload: Dict[str, Any]) -> Any:
 
     if action == "rank":
         if str(user_id) not in data:
-            return "Kamu belum punya XP. Chat dulu di server 😄"
+            return "Get active and start earning XP first."
         xp = data[str(user_id)]
-        return f"📊 Level **{xp // 100}** — {xp} XP (next level dalam {100 - xp % 100} XP)"
+        return f"Level **{xp // 100}** — {xp} XP (next level in {100 - xp % 100} XP)"
 
     if action == "leaderboard":
         if not data:
-            return "Belum ada XP tercatat."
+            return "No XP recorded yet."
         top = sorted(data.items(), key=lambda kv: kv[1], reverse=True)[:10]
-        lines = ["🏆 **XP Leaderboard**"]
+        lines = ["Leaderboard"]
         for i, (uid, xp) in enumerate(top, 1):
             lines.append(f"{i}. <@{uid}> — level {xp // 100} ({xp} XP)")
         return "\n".join(lines)
-    return f"Levels action '{action}' belum ada."
+    return f"Levels action '{action}' not found."
 
-
-# ---------------------------------------------------------------- social
 
 async def social(payload: Dict[str, Any]) -> Any:
     action = _d(payload, "entry", "action")
@@ -940,44 +781,33 @@ async def social(payload: Dict[str, Any]) -> Any:
 
         store.update(_apply)
         cfg = store.read().get(guild_id, {})
-        return {"content": f"⚙️ Config **{action}** tersimpan: `{cfg}`"}
+        return {"content": f"**{action}** config saved: `{cfg}`"}
 
     if action == "autorole":
         if inp.get("role") is None:
-            return "Kasih role-nya."
+            return "Specify the role."
 
         def _set_role(d: dict) -> dict:
             d.setdefault(guild_id, {})["autorole_role"] = int(inp["role"].id)
             return d
 
         store.update(_set_role)
-        return {"content": f"⚙️ Autorole disimpan: {inp['role'].name}"}
+        return {"content": f"Autorole saved: {inp['role'].name}"}
 
     if action == "announce":
         text = str(inp.get("text") or "").strip()
         if not text:
-            return "Kasih teks pengumumannya."
+            return "Provide the announcement text."
         return {"announce": text}
 
     if action == "greet":
         who = inp.get("user")
         name = who.display_name if who is not None else str(inp.get("username") or "member")
-        cfg = store.read().get(guild_id, {})
-        msg = cfg.get("welcome_message") or "Selamat datang {user} di server! 🎉"
-        role_id = cfg.get("autorole_role")
-        if role_id and who is not None:
-            role = who.guild.get_role(int(role_id))
-            if role is not None:
-                try:
-                    await who.add_roles(role, reason="autorole")
-                except Exception:
-                    pass
+        msg = store.read().get(guild_id, {}).get("welcome_message") or "Welcome {user} to the server!"
         return msg.replace("{user}", name)
 
-    return f"Social action '{action}' belum ada."
+    return f"Social action '{action}' not implemented yet."
 
-
-# ---------------------------------------------------------------- utility
 
 async def util(payload: Dict[str, Any]) -> Any:
     action = _d(payload, "entry", "action")
@@ -988,13 +818,13 @@ async def util(payload: Dict[str, Any]) -> Any:
     if action == "poll":
         question = str(inp.get("question") or "").strip()
         if not question:
-            return "Kasih pertanyaan poll."
+            return "Provide a poll question."
         return {"poll": question}
     if action == "remind":
         minutes = int(inp.get("minutes") or 0)
         text = str(inp.get("text") or "").strip() or "reminder"
         if minutes <= 0:
-            return "Kasih durasi (menit) yang valid."
+            return "Provide a valid duration in minutes."
         reminders: JSONStore = payload["_reminders"]
 
         def _add_reminder(d: dict) -> dict:
@@ -1009,17 +839,17 @@ async def util(payload: Dict[str, Any]) -> Any:
             return d
 
         reminders.update(_add_reminder)
-        return f"⏰ Oke, aku ingetin **{text}** dalam {minutes} menit."
+        return f"Got it: I'll remind you about **{text}** in {minutes} minutes."
     if action == "reminders-list":
         reminders: JSONStore = payload["_reminders"]
         uid = payload["discord"]["user_id"]
         items = [r for r in reminders.read().get("items", []) if r.get("user_id") == uid]
         if not items:
-            return "Kamu gak punya reminder aktif."
-        lines = ["⏰ Reminder kamu:"]
+            return "You don't have any active reminders."
+        lines = ["Your reminders:"]
         for r in items:
             due = dt.datetime.fromtimestamp(r["due"]).strftime("%d/%m %H:%M")
-            lines.append(f"- **{r['text']}** (jam {due})")
+            lines.append(f"- **{r['text']}** (at {due})")
         return "\n".join(lines)
     if action == "serverinfo":
         g = interaction.guild
@@ -1033,9 +863,9 @@ async def util(payload: Dict[str, Any]) -> Any:
             ],
         }
     if action == "membercount":
-        return f"👥 **{interaction.guild.name}** punya {interaction.guild.member_count} member."
+        return f"**{interaction.guild.name}** has {interaction.guild.member_count} members."
     if action == "servercreated":
-        return f"📅 **{interaction.guild.name}** dibuat {interaction.guild.created_at.date()}."
+        return f"**{interaction.guild.name}** was created on {interaction.guild.created_at.date()}."
     if action == "userinfo":
         u = inp.get("user") or interaction.user
         return {
@@ -1045,67 +875,67 @@ async def util(payload: Dict[str, Any]) -> Any:
         }
     if action == "avatar":
         u = inp.get("user") or interaction.user
-        return {"image": str(u.display_avatar.url), "content": f"🖼️ Avatar **{u.display_name}**"}
+        return {"image": str(u.display_avatar.url), "content": f"Avatar for **{u.display_name}**"}
     if action == "banner":
         u = inp.get("user") or interaction.user
         if u.banner is None:
-            return f"**{u.display_name}** gak punya banner."
-        return {"image": str(u.banner.url), "content": f"🎏 Banner **{u.display_name}**"}
+            return f"**{u.display_name}** has no banner."
+        return {"image": str(u.banner.url), "content": f"Banner for **{u.display_name}**"}
     if action == "servericon":
         if interaction.guild.icon is None:
-            return "Server ini gak punya icon."
-        return {"image": str(interaction.guild.icon.url), "content": f"🏘️ **{interaction.guild.name}**"}
+            return "This server doesn't have an icon set."
+        return {"image": str(interaction.guild.icon.url), "content": f"**{interaction.guild.name}**"}
     if action == "ping":
-        return "🏓 Pong! Bot hidup dan sehat."
+        return "Pong, up and healthy (probably)."
     if action == "uptime":
         up = payload.get("_uptime", 0)
         h, m = int(up // 3600), int(up % 3600 // 60)
-        return f"⏱️ Uptime: {h}j {m}m — {catalog_count} pipeline di katalog."
+        return f"Uptime: {h}h {m}m — {catalog_count} pipelines in catalog."
     if action == "invite":
-        return "🔗 Invite link bot dibuat dari Discord Developer Portal (OAuth2 → URL Generator)."
+        return "Find the invite link in the Discord Developer Portal for more setup options."
     if action == "embed":
         title = str(inp.get("title") or "Embed")
         text = str(inp.get("text") or "")
         return {"title": title, "content": text or None}
     if action == "help":
         return {
-            "content": "Semua fitur bot ini diatur dari **dashboard** (tanya admin untuk linknya). "
-                       "Command tersedia: `/ai`, `/music`, `/mod`, `/fun`, `/games`, `/eco`, `/social`, `/util`."
+            "content": "All of these features are controlled by an admin — ask them for setup help. "
+                       "Available commands: `/ai`, `/music`, `/mod`, `/fun`, `/games`, `/eco`, `/social`, `/util`."
         }
     if action == "random-number":
         lo, hi = int(inp.get("min") or 1), int(inp.get("max") or 100)
-        return f"🎯 {random.randint(min(lo, hi), max(lo, hi))}"
+        return f"{random.randint(min(lo, hi), max(lo, hi))}"
     if action == "random-color":
         c = "%06x" % random.randint(0, 0xFFFFFF)
-        return {"content": f"🎨 `#{c}`", "image": f"https://singlecolorimage.com/get/{c}/200x100"}
+        return {"content": f"`#{c}`", "image": f"https://singlecolorimage.com/get/{c}/200x100"}
     if action == "calc":
         expr = str(inp.get("expression") or "").replace("^", "**")
         if not re.fullmatch(r"[0-9+\-*/(). %]+", expr or ""):
-            return "Expresi gak valid (cuma angka + math)."
+            return "Invalid expression."
         try:
-            val = eval(expr, {"__builtins__": {}}, {})  # noqa: S307 — sanitized above
+            val = eval(expr, {"__builtins__": {}}, {})
         except Exception as exc:
-            return f"Gak bisa dihitung: {exc.__class__.__name__}"
-        return f"🧮 {expr} = **{val}**"
+            return f"Couldn't evaluate that: {exc.__class__.__name__}"
+        return f"{expr} = **{val}**"
     if action == "define":
         word = str(inp.get("word") or "").strip()
         if not word:
-            return "Kasih kata yang mau dicek."
+            return "Provide a word to look up."
         try:
             async with aiohttp.ClientSession() as s:
                 async with s.get(f"https://api.dictionaryapi.dev/api/v2/entries/en/{word}",
                                  timeout=aiohttp.ClientTimeout(total=15)) as r:
                     data = await r.json()
             if isinstance(data, dict):
-                return f"📚 Kata '{word}' gak ketemu di kamus."
+                return f"'{word}' wasn't found in the dictionary."
             meaning = data[0]["meanings"][0]["definitions"][0]["definition"]
-            return f"📖 **{word}**: {meaning}"
+            return f"**{word}**: {meaning}"
         except Exception:
-            return "Kamus service lagi down."
+            return "The dictionary service is down right now."
     if action == "weather":
         city = str(inp.get("city") or "").strip()
         if not city:
-            return "Kasih nama kota."
+            return "Provide a city name."
         try:
             async with aiohttp.ClientSession() as s:
                 async with s.get(
@@ -1114,7 +944,7 @@ async def util(payload: Dict[str, Any]) -> Any:
                 ) as r:
                     geo = await r.json()
                 if not geo.get("results"):
-                    return f"Kota '{city}' gak ketemu."
+                    return f"Couldn't find the city '{city}'."
                 lat, lon = geo["results"][0]["latitude"], geo["results"][0]["longitude"]
                 async with s.get(
                     f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current_weather=true",
@@ -1122,36 +952,15 @@ async def util(payload: Dict[str, Any]) -> Any:
                 ) as r:
                     wx = await r.json()
             cw = wx["current_weather"]
-            return f"🌤️ {city}: {cw['temperature']}°C, angin {cw['windspeed']} km/h"
+            return f"{city}: {cw['temperature']}°C, wind {cw['windspeed']} km/h"
         except Exception:
-            return "Weather service lagi down."
+            return "The weather service is down right now."
     if action == "time":
-        return f"🕒 {dt.datetime.now().strftime('%H:%M:%S')} (waktu server)"
-    return f"Util action '{action}' belum ada."
+        return f"{dt.datetime.now().strftime('%H:%M:%S')} (server time)"
+    return f"Util action '{action}' not found."
 
-
-def pop_due_reminders(reminders: "JSONStore") -> List[Dict[str, Any]]:
-    """Pull out reminders whose time has come. Called by the client's
-    background loop — the client just delivers whatever this returns; it has
-    no idea how "due" is decided."""
-    now = _now()
-    items = reminders.read().get("items", [])
-    due = [i for i in items if i.get("due", 0) <= now]
-    if due:
-        remaining = [i for i in items if i.get("due", 0) > now]
-
-        def _keep_remaining(d: dict) -> dict:
-            d["items"] = remaining
-            return d
-
-        reminders.update(_keep_remaining)
-    return due
-
-
-# ---------------------------------------------------------------- registry
 
 def register_all(engine, secrets: ConfigStore, runtime: RuntimeConfig, catalog) -> Dict[str, Any]:
-    """Register every handler type; shared stores returned for the client."""
     stores = {
         "_economy": JSONStore("economy"),
         "_warnings": JSONStore("warnings"),
@@ -1175,7 +984,6 @@ def register_all(engine, secrets: ConfigStore, runtime: RuntimeConfig, catalog) 
     engine.register("ai_chat", bind(ai_chat))
     engine.register("ai_task", bind(ai_task))
     engine.register("music_resolve", bind(music_resolve))
-    engine.register("music", bind(music))
     engine.register("mod", bind(mod))
     engine.register("fun", bind(fun))
     engine.register("game", bind(game))

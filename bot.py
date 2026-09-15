@@ -12,7 +12,7 @@ class BotController:
         self.client = discord_client
         self.config = config_store
         self.task: Optional[asyncio.Task] = None
-        self.desired = "stopped"  # "running" | "stopped"
+        self.desired = "stopped"
         self.last_error: Optional[str] = None
         self._failed = False
         self._failed_at = 0.0
@@ -31,7 +31,7 @@ class BotController:
             return "already running"
         if not self.config.is_configured("DISCORD_TOKEN"):
             self.desired = "running"
-            return "token missing — paste the Discord token in Settings"
+            return "token missing, paste the Discord token in Settings"
         self.desired = "running"
         self._failed = False
         self.last_error = None
