@@ -68,4 +68,4 @@ class PipelineClient:
         return await self.engine.run(pipeline_type, payload)
 
     def stats(self) -> Dict[str, Any]:
-        return self.engine.stats()
+        return self.engine.stats()h

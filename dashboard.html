@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>business-BOT dashboard</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: #0f1115; color: #e6e6e6; padding: 24px;
+  }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  h2 { font-size: 14px; text-transform: uppercase; letter-spacing: .05em; color: #9aa0a8; margin: 28px 0 10px; }
+  .sub { color: #9aa0a8; font-size: 13px; margin-bottom: 24px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+  .card {
+    background: #171a21; border: 1px solid #262a33; border-radius: 10px; padding: 14px 16px;
+  }
+  .card .label { font-size: 12px; color: #9aa0a8; margin-bottom: 4px; }
+  .card .value { font-size: 20px; font-weight: 600; }
+  .pill { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+  .pill.on { background: #16341f; color: #4ade80; }
+  .pill.off { background: #3a1c1c; color: #f87171; }
+  button {
+    background: #2563eb; color: white; border: none; border-radius: 8px;
+    padding: 8px 14px; font-size: 13px; cursor: pointer; margin-right: 8px;
+  }
+  button.secondary { background: #262a33; }
+  button:hover { opacity: .9; }
+  input, select, textarea {
+    background: #0f1115; border: 1px solid #262a33; border-radius: 6px; color: #e6e6e6;
+    padding: 7px 9px; font-size: 13px; width: 100%;
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  td, th { text-align: left; padding: 8px 6px; border-bottom: 1px solid #21242c; }
+  th { color: #9aa0a8; font-weight: 500; }
+  .row { display: flex; gap: 10px; align-items: center; margin-bottom: 10px; }
+  .row label { width: 140px; font-size: 13px; color: #9aa0a8; }
+  form.inline { display: flex; gap: 8px; }
+  .toast { position: fixed; bottom: 20px; right: 20px; background: #171a21; border: 1px solid #262a33;
+    padding: 10px 14px; border-radius: 8px; font-size: 13px; display: none; }
+</style>
+</head>
+<body>
+  <h1>business-BOT</h1>
+  <div class="sub">Control panel &mdash; lifecycle, resource limits, and enabled commands.</div>
+
+  <div class="grid" id="statusCards"></div>
+
+  <div style="margin-top:16px;">
+    <button onclick="post('/api/bot/start')">Start bot</button>
+    <button class="secondary" onclick="post('/api/bot/stop')">Stop</button>
+    <button class="secondary" onclick="post('/api/bot/restart')">Restart</button>
+  </div>
+
+  <h2>Secrets</h2>
+  <div id="secrets"></div>
+
+  <h2>Resource limits</h2>
+  <div id="limits"></div>
+
+  <h2>AI settings</h2>
+  <div id="ai"></div>
+
+  <h2>Commands (<span id="catalogCount">0</span>)</h2>
+  <table>
+    <thead><tr><th>Command</th><th>Category</th><th>Description</th><th></th></tr></thead>
+    <tbody id="catalogBody"></tbody>
+  </table>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+const toast = (msg) => {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.style.display = 'block';
+  clearTimeout(t._h); t._h = setTimeout(() => t.style.display = 'none', 2500);
+};
+
+async function post(url, body) {
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: body ? { 'Content-Type': 'application/json' } : undefined,
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) { toast(data.detail || 'Error'); throw new Error(data.detail || res.statusText); }
+  if (data.message) toast(data.message);
+  return data;
+}
+
+async function loadStatus() {
+  const s = await (await fetch('/api/status')).json();
+  const g = s.governor, e = s.engine;
+  document.getElementById('statusCards').innerHTML = `
+    <div class="card"><div class="label">Bot</div><div class="value">
+      <span class="pill ${s.bot_status === 'ONLINE' ? 'on' : 'off'}">${s.bot_status}</span>
+    </div></div>
+    <div class="card"><div class="label">Token</div><div class="value">
+      <span class="pill ${s.token_configured ? 'on' : 'off'}">${s.token_configured ? 'set' : 'missing'}</span>
+    </div></div>
+    <div class="card"><div class="label">CPU</div><div class="value">${g.cpu_percent}% <span style="color:#9aa0a8;font-size:12px">/ ${g.limits.cpu_percent}%</span></div></div>
+    <div class="card"><div class="label">RAM</div><div class="value">${g.ram_mb} MB <span style="color:#9aa0a8;font-size:12px">/ ${g.limits.ram_mb} MB</span></div></div>
+    <div class="card"><div class="label">GPU</div><div class="value">${g.gpu_available ? g.gpu_percent + '%' : 'n/a'}</div></div>
+    <div class="card"><div class="label">Pipelines running</div><div class="value">${e.active} / ${e.max_concurrent}</div></div>
+    <div class="card"><div class="label">Runs (ok / failed)</div><div class="value">${e.total_run - e.total_failed} / ${e.total_failed}</div></div>
+  `;
+  if (s.last_error) toast('Last error: ' + s.last_error);
+}
+
+async function loadSecrets() {
+  const s = await (await fetch('/api/settings')).json();
+  document.getElementById('secrets').innerHTML = Object.entries(s).map(([k, v]) => `
+    <div class="row">
+      <label>${k}</label>
+      <form class="inline" style="flex:1" onsubmit="saveSecret(event, '${k}')">
+        <input type="password" placeholder="${v}" id="secret_${k}">
+        <button type="submit">Save</button>
+      </form>
+    </div>
+  `).join('');
+}
+async function saveSecret(ev, key) {
+  ev.preventDefault();
+  const input = document.getElementById('secret_' + key);
+  if (!input.value.trim()) return;
+  await post('/api/settings', { key, value: input.value.trim() });
+  input.value = '';
+  loadSecrets(); loadStatus();
+}
+
+async function loadLimits() {
+  const l = await (await fetch('/api/limits')).json();
+  document.getElementById('limits').innerHTML = `
+    <form class="row" onsubmit="saveLimits(event)" style="flex-wrap:wrap">
+      <label>CPU %</label><input id="lim_cpu" type="number" value="${l.cpu_percent}" style="max-width:100px">
+      <label>RAM MB</label><input id="lim_ram" type="number" value="${l.ram_mb}" style="max-width:100px">
+      <label>GPU %</label><input id="lim_gpu" type="number" value="${l.gpu_percent}" style="max-width:100px">
+      <label>Max concurrent</label><input id="lim_mc" type="number" value="${l.max_concurrent}" style="max-width:100px">
+      <button type="submit">Save</button>
+    </form>
+  `;
+}
+async function saveLimits(ev) {
+  ev.preventDefault();
+  await post('/api/limits', {
+    cpu_percent: Number(document.getElementById('lim_cpu').value),
+    ram_mb: Number(document.getElementById('lim_ram').value),
+    gpu_percent: Number(document.getElementById('lim_gpu').value),
+    max_concurrent: Number(document.getElementById('lim_mc').value),
+  });
+  loadStatus();
+}

@@ -1,14 +1,11 @@
 from __future__ import annotations
-
 import asyncio
 import datetime as dt
 import random
 import re
 import time
 from typing import Any, Dict, List, Optional
-
 import aiohttp
-
 from ..config import ConfigStore, JSONStore, RuntimeConfig
 
 EIGHTBALL = [
@@ -208,7 +205,6 @@ async def ai_chat(payload: Dict[str, Any]) -> Any:
 
 
 async def ai_task(payload: Dict[str, Any]) -> Any:
-    """Variant AI commands (translate, summarize, roast...) driven by entry prompt."""
     prompt_template: str = _d(payload, "entry", "prompt", default="Help with: {input}")
     user_input = _input_text(payload)
     if not user_input:

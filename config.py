@@ -1,11 +1,9 @@
 from __future__ import annotations
-
 import json
 import os
 import threading
 from pathlib import Path
 from typing import Any, Dict, List, Optional
-
 from dotenv import load_dotenv, set_key
 
 BASE_DIR = Path(__file__).resolve().parent.parent
